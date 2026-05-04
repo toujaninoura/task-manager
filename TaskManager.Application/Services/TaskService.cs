@@ -23,7 +23,7 @@ public class TaskService : ITaskService
 
     public async Task<TaskItemResponse> GetByIdAsync(int id)
     {
-        var taskItem = await _unitOfWork.Tasks.GetByIdAsync(id);
+        var taskItem = await _unitOfWork.Tasks.GetByIdNoTrackingAsync(id);
         if (taskItem is null)
             throw new NotFoundException(nameof(TaskItem), id);
 

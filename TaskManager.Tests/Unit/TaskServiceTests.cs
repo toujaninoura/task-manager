@@ -51,7 +51,7 @@ public class TaskServiceTests
             UpdatedAt = DateTime.UtcNow
         };
 
-        _taskRepositoryMock.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(taskItem);
+        _taskRepositoryMock.Setup(r => r.GetByIdNoTrackingAsync(1)).ReturnsAsync(taskItem);
 
         var result = await _sut.GetByIdAsync(1);
 
@@ -63,7 +63,7 @@ public class TaskServiceTests
     [Test]
     public async Task GetByIdAsync_WhenTaskNotFound_ShouldThrowNotFoundException()
     {
-        _taskRepositoryMock.Setup(r => r.GetByIdAsync(99)).ReturnsAsync((TaskItem?)null);
+        _taskRepositoryMock.Setup(r => r.GetByIdNoTrackingAsync(99)).ReturnsAsync((TaskItem?)null);
 
         Func<Task> act = async () => await _sut.GetByIdAsync(99);
 

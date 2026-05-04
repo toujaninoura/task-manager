@@ -19,6 +19,12 @@ public class TaskRepository : ITaskRepository
     public async Task<TaskItem?> GetByIdAsync(int id)
     {
         return await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id);
+    }
+
+    public async Task<TaskItem?> GetByIdNoTrackingAsync(int id)
+    {
+        return await _context.Tasks
             .AsNoTracking()
             .FirstOrDefaultAsync(t => t.Id == id);
     }
@@ -70,7 +76,9 @@ public class TaskRepository : ITaskRepository
     {
         taskItem.IsDeleted = true;
         taskItem.DeletedAt = DateTime.UtcNow;
-        _context.Tasks.Update(taskItem);
+        _context.Tasks.Attach(taskItem);
+        _context.Entry(taskItem).Property(t => t.IsDeleted).IsModified = true;
+        _context.Entry(taskItem).Property(t => t.DeletedAt).IsModified = true;
         await Task.CompletedTask;
     }
 
