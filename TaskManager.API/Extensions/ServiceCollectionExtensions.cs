@@ -7,9 +7,11 @@ using Microsoft.OpenApi.Models;
 using TaskManager.Application.Interfaces;
 using TaskManager.Application.Mappings;
 using TaskManager.Application.Services;
+using TaskManager.Application.Settings;
 using TaskManager.Application.Validators;
 using TaskManager.Infrastructure.Data;
 using TaskManager.Infrastructure.Repositories;
+using TaskManager.Infrastructure.Services;
 
 namespace TaskManager.API.Extensions;
 
@@ -18,6 +20,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 
@@ -25,11 +28,16 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<JwtSettings>(configuration.GetSection("JWT"));
+
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<ITokenService, JwtTokenService>();
         return services;
     }
 
@@ -49,8 +57,9 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var jwtSecret = configuration["JWT:Secret"]
-            ?? throw new InvalidOperationException("JWT:Secret is not configured.");
+        var jwtSecret = configuration["JWT:Secret"];
+        if (string.IsNullOrWhiteSpace(jwtSecret))
+            throw new InvalidOperationException("JWT:Secret is not configured. Use dotnet user-secrets to set it.");
 
         var key = Encoding.UTF8.GetBytes(jwtSecret);
 
