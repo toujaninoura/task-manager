@@ -7,9 +7,11 @@ using Microsoft.OpenApi.Models;
 using TaskManager.Application.Interfaces;
 using TaskManager.Application.Mappings;
 using TaskManager.Application.Services;
+using TaskManager.Application.Settings;
 using TaskManager.Application.Validators;
 using TaskManager.Infrastructure.Data;
 using TaskManager.Infrastructure.Repositories;
+using TaskManager.Infrastructure.Services;
 
 namespace TaskManager.API.Extensions;
 
@@ -26,12 +28,16 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        services.Configure<JwtSettings>(configuration.GetSection("JWT"));
+
         services.AddDbContext<AppDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<ITokenService, JwtTokenService>();
         return services;
     }
 

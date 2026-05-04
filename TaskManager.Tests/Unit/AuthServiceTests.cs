@@ -1,7 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
-using BCrypt.Net;
 using FluentAssertions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -18,8 +16,9 @@ public class AuthServiceTests
 {
     private Mock<IUserRepository> _userRepositoryMock;
     private Mock<IUnitOfWork> _unitOfWorkMock;
+    private Mock<IPasswordHasher> _passwordHasherMock;
+    private Mock<ITokenService> _tokenServiceMock;
     private Mock<ILogger<AuthService>> _loggerMock;
-    private IConfiguration _configuration;
     private AuthService _sut;
 
     [SetUp]
@@ -27,24 +26,15 @@ public class AuthServiceTests
     {
         _userRepositoryMock = new Mock<IUserRepository>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _passwordHasherMock = new Mock<IPasswordHasher>();
+        _tokenServiceMock = new Mock<ITokenService>();
         _loggerMock = new Mock<ILogger<AuthService>>();
-
-        var inMemorySettings = new Dictionary<string, string?>
-        {
-            { "JWT:Secret", "TestSecret_SuperSecretKey_2026!!_XYZ987_Test" },
-            { "JWT:Issuer", "TaskManagerApi" },
-            { "JWT:Audience", "TaskManagerApiUsers" },
-            { "JWT:ExpirationInMinutes", "60" }
-        };
-
-        _configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(inMemorySettings)
-            .Build();
 
         _sut = new AuthService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
-            _configuration,
+            _passwordHasherMock.Object,
+            _tokenServiceMock.Object,
             _loggerMock.Object);
     }
 
@@ -52,8 +42,11 @@ public class AuthServiceTests
     public async Task RegisterAsync_WithValidData_ShouldReturnTokenAndAuthResponse()
     {
         var request = new RegisterRequest("test@example.com", "password123");
+        var fakeToken = "fake.jwt.token";
+        var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         _userRepositoryMock.Setup(r => r.ExistsAsync(request.Email)).ReturnsAsync(false);
+        _passwordHasherMock.Setup(h => h.Hash(request.Password)).Returns("hashed_password");
         _userRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .ReturnsAsync((User u) =>
             {
@@ -61,20 +54,20 @@ public class AuthServiceTests
                 return u;
             });
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _tokenServiceMock.Setup(t => t.GenerateToken(1, request.Email)).Returns((fakeToken, expiresAt));
 
         var result = await _sut.RegisterAsync(request);
 
         result.Should().NotBeNull();
-        result.Token.Should().NotBeNullOrWhiteSpace();
+        result.Token.Should().Be(fakeToken);
         result.Email.Should().Be(request.Email);
         result.UserId.Should().Be(1);
-        result.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
-
-        var handler = new JwtSecurityTokenHandler();
-        handler.CanReadToken(result.Token).Should().BeTrue();
+        result.ExpiresAt.Should().Be(expiresAt);
 
         _userRepositoryMock.Verify(r => r.CreateAsync(It.IsAny<User>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _passwordHasherMock.Verify(h => h.Hash(request.Password), Times.Once);
+        _tokenServiceMock.Verify(t => t.GenerateToken(1, request.Email), Times.Once);
     }
 
     [Test]
@@ -94,41 +87,44 @@ public class AuthServiceTests
     public async Task LoginAsync_WithValidCredentials_ShouldReturnTokenAndAuthResponse()
     {
         var password = "password123";
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
         var user = new User
         {
             Id = 1,
             Email = "user@example.com",
-            PasswordHash = passwordHash,
+            PasswordHash = "hashed_password",
             CreatedAt = DateTime.UtcNow
         };
+        var fakeToken = "fake.jwt.token";
+        var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         var request = new LoginRequest("user@example.com", password);
         _userRepositoryMock.Setup(r => r.GetByEmailAsync(request.Email)).ReturnsAsync(user);
+        _passwordHasherMock.Setup(h => h.Verify(password, user.PasswordHash)).Returns(true);
+        _tokenServiceMock.Setup(t => t.GenerateToken(user.Id, user.Email)).Returns((fakeToken, expiresAt));
 
         var result = await _sut.LoginAsync(request);
 
         result.Should().NotBeNull();
-        result.Token.Should().NotBeNullOrWhiteSpace();
+        result.Token.Should().Be(fakeToken);
         result.Email.Should().Be(user.Email);
         result.UserId.Should().Be(user.Id);
-        result.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
+        result.ExpiresAt.Should().Be(expiresAt);
     }
 
     [Test]
     public async Task LoginAsync_WithInvalidPassword_ShouldThrowUnauthorizedException()
     {
-        var passwordHash = BCrypt.Net.BCrypt.HashPassword("correctpassword");
         var user = new User
         {
             Id = 1,
             Email = "user@example.com",
-            PasswordHash = passwordHash,
+            PasswordHash = "hashed_password",
             CreatedAt = DateTime.UtcNow
         };
 
         var request = new LoginRequest("user@example.com", "wrongpassword");
         _userRepositoryMock.Setup(r => r.GetByEmailAsync(request.Email)).ReturnsAsync(user);
+        _passwordHasherMock.Setup(h => h.Verify(request.Password, user.PasswordHash)).Returns(false);
 
         Func<Task> act = async () => await _sut.LoginAsync(request);
 
@@ -147,12 +143,15 @@ public class AuthServiceTests
     }
 
     [Test]
-    public async Task RegisterAsync_PasswordShouldBeHashedWithBCrypt()
+    public async Task RegisterAsync_PasswordShouldBeHashedViaPasswordHasher()
     {
         var request = new RegisterRequest("hash@example.com", "password123");
+        var expectedHash = "bcrypt_hashed_password";
         User? capturedUser = null;
+        var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         _userRepositoryMock.Setup(r => r.ExistsAsync(request.Email)).ReturnsAsync(false);
+        _passwordHasherMock.Setup(h => h.Hash(request.Password)).Returns(expectedHash);
         _userRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<User>()))
             .Callback<User>(u => capturedUser = u)
             .ReturnsAsync((User u) =>
@@ -161,11 +160,13 @@ public class AuthServiceTests
                 return u;
             });
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+        _tokenServiceMock.Setup(t => t.GenerateToken(2, request.Email)).Returns(("token", expiresAt));
 
         await _sut.RegisterAsync(request);
 
         capturedUser.Should().NotBeNull();
-        capturedUser!.PasswordHash.Should().NotBe(request.Password);
-        BCrypt.Net.BCrypt.Verify(request.Password, capturedUser.PasswordHash).Should().BeTrue();
+        capturedUser!.PasswordHash.Should().Be(expectedHash);
+        capturedUser.PasswordHash.Should().NotBe(request.Password);
+        _passwordHasherMock.Verify(h => h.Hash(request.Password), Times.Once);
     }
 }

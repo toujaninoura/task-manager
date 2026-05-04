@@ -8,7 +8,6 @@ namespace TaskManager.API.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-[AllowAnonymous]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
@@ -21,6 +20,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Register a new user</summary>
+    [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 201)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
@@ -32,6 +32,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Login with email and password</summary>
+    [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(ApiResponse<AuthResponse>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
