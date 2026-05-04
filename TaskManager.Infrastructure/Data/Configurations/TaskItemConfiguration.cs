@@ -17,13 +17,15 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .HasMaxLength(200);
 
         builder.Property(t => t.Description)
-            .HasMaxLength(2000);
+            .HasMaxLength(1000);
 
         builder.Property(t => t.Status)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>();
 
         builder.Property(t => t.Priority)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<string>();
 
         builder.Property(t => t.CreatedAt)
             .IsRequired();
@@ -35,6 +37,12 @@ public class TaskItemConfiguration : IEntityTypeConfiguration<TaskItem>
             .IsRequired()
             .HasDefaultValue(false);
 
+        builder.HasOne(t => t.User)
+            .WithMany(u => u.Tasks)
+            .HasForeignKey(t => t.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(t => t.UserId);
         builder.HasIndex(t => t.Status);
         builder.HasIndex(t => t.Priority);
         builder.HasIndex(t => t.IsDeleted);
