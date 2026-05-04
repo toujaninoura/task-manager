@@ -18,7 +18,7 @@ public class TaskRepository : ITaskRepository
     {
         return await _context.Tasks
             .AsNoTracking()
-            .Where(t => t.UserId == userId)
+            .Where(t => t.UserId == userId && !t.IsDeleted)
             .OrderByDescending(t => t.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -29,14 +29,20 @@ public class TaskRepository : ITaskRepository
     {
         return await _context.Tasks
             .AsNoTracking()
-            .CountAsync(t => t.UserId == userId, ct);
+            .CountAsync(t => t.UserId == userId && !t.IsDeleted, ct);
     }
 
     public async Task<TaskItem?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default)
     {
         return await _context.Tasks
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId && !t.IsDeleted, ct);
+    }
+
+    public async Task<TaskItem?> GetByIdAndUserIdTrackingAsync(int id, int userId, CancellationToken ct = default)
+    {
+        return await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId && !t.IsDeleted, ct);
     }
 
     public async Task<TaskItem> CreateAsync(TaskItem task, CancellationToken ct = default)
@@ -45,13 +51,13 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task UpdateAsync(TaskItem task, CancellationToken ct = default)
+    public async Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
     {
         var existing = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == task.Id && t.UserId == task.UserId, ct);
 
         if (existing is null)
-            return;
+            throw new InvalidOperationException($"Task with id {task.Id} not found for update.");
 
         existing.Title = task.Title;
         existing.Description = task.Description;
@@ -59,6 +65,8 @@ public class TaskRepository : ITaskRepository
         existing.Priority = task.Priority;
         existing.DueDate = task.DueDate;
         existing.UpdatedAt = task.UpdatedAt;
+
+        return existing;
     }
 
     public async Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default)

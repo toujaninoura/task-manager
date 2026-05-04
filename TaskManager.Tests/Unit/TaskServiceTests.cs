@@ -177,6 +177,76 @@ public class TaskServiceTests
         await act.Should().ThrowAsync<TaskManager.Domain.Exceptions.ValidationException>();
     }
 
+    // --- UpdateAsync ---
+
+    [Test]
+    public async Task UpdateAsync_WhenValidRequest_ShouldReturnUpdatedResponse()
+    {
+        const int taskId = 1;
+        const int userId = 1;
+        var request = new UpdateTaskItemRequest("Updated Title", "Updated Desc", TaskItemStatus.InProgress, TaskPriority.High, null);
+        var tracked = new TaskItem
+        {
+            Id = taskId,
+            Title = "Updated Title",
+            Description = "Updated Desc",
+            Status = TaskItemStatus.InProgress,
+            Priority = TaskPriority.High,
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tracked);
+        _taskRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tracked);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        var result = await _sut.UpdateAsync(taskId, request, userId);
+
+        result.Should().NotBeNull();
+        result.Title.Should().Be("Updated Title");
+        result.Status.Should().Be(TaskItemStatus.InProgress);
+        _taskRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Test]
+    public async Task UpdateAsync_WhenTaskNotFound_ThrowsNotFoundException()
+    {
+        const int taskId = 99;
+        const int userId = 1;
+        var request = new UpdateTaskItemRequest("Title", null, TaskItemStatus.Todo, TaskPriority.Medium, null);
+
+        _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskItem?)null);
+
+        Func<Task> act = async () => await _sut.UpdateAsync(taskId, request, userId);
+
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Test]
+    public async Task UpdateAsync_WhenInvalidRequest_ThrowsValidationException()
+    {
+        const int taskId = 1;
+        const int userId = 1;
+        var request = new UpdateTaskItemRequest("", null, TaskItemStatus.Todo, TaskPriority.Medium, null);
+        var failures = new List<ValidationFailure> { new("Title", "Title is required.") };
+
+        _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult(failures));
+
+        Func<Task> act = async () => await _sut.UpdateAsync(taskId, request, userId);
+
+        await act.Should().ThrowAsync<TaskManager.Domain.Exceptions.ValidationException>();
+    }
+
     // --- DeleteAsync ---
 
     [Test]

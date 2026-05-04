@@ -77,9 +77,8 @@ public class TaskService : ITaskService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors.Select(e => e.ErrorMessage));
 
-        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdAsync(id, userId, ct);
-        if (taskItem is null)
-            throw new NotFoundException(nameof(TaskItem), id);
+        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdTrackingAsync(id, userId, ct)
+            ?? throw new NotFoundException(nameof(TaskItem), id);
 
         taskItem.Title = request.Title;
         taskItem.Description = request.Description;
@@ -88,12 +87,12 @@ public class TaskService : ITaskService
         taskItem.DueDate = request.DueDate;
         taskItem.UpdatedAt = DateTime.UtcNow;
 
-        await _unitOfWork.Tasks.UpdateAsync(taskItem, ct);
+        var updated = await _unitOfWork.Tasks.UpdateAsync(taskItem, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation("Task {TaskId} updated for user {UserId}", id, userId);
 
-        return _mapper.Map<TaskItemResponse>(taskItem);
+        return _mapper.Map<TaskItemResponse>(updated);
     }
 
     public async Task DeleteAsync(int id, int userId, CancellationToken ct = default)
