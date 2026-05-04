@@ -5,9 +5,9 @@ namespace TaskManager.Application.Interfaces;
 
 public interface ITaskService
 {
-    Task<TaskItemResponse> GetByIdAsync(int id);
-    Task<PagedResponse<TaskItemResponse>> GetAllAsync(TaskQueryParams queryParams);
-    Task<TaskItemResponse> CreateAsync(CreateTaskItemRequest request);
-    Task<TaskItemResponse> UpdateAsync(int id, UpdateTaskItemRequest request);
-    Task DeleteAsync(int id);
+    Task<PagedResponse<TaskItemResponse>> GetAllAsync(int userId, int page, int pageSize, CancellationToken ct = default);
+    Task<TaskItemResponse> GetByIdAsync(int id, int userId, CancellationToken ct = default);
+    Task<TaskItemResponse> CreateAsync(CreateTaskItemRequest request, int userId, CancellationToken ct = default);
+    Task<TaskItemResponse> UpdateAsync(int id, UpdateTaskItemRequest request, int userId, CancellationToken ct = default);
+    Task DeleteAsync(int id, int userId, CancellationToken ct = default);
 }

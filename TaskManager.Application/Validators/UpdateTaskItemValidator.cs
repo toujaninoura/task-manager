@@ -12,7 +12,7 @@ public class UpdateTaskItemValidator : AbstractValidator<UpdateTaskItemRequest>
             .MaximumLength(200).WithMessage("Title cannot exceed 200 characters.");
 
         RuleFor(x => x.Description)
-            .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters.")
+            .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters.")
             .When(x => x.Description != null);
 
         RuleFor(x => x.Status)

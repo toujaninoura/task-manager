@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManager.Application.Common;
@@ -7,7 +8,7 @@ using TaskManager.Application.Interfaces;
 namespace TaskManager.API.Controllers;
 
 [ApiController]
-[Route("api/v1/[controller]")]
+[Route("api/v1/tasks")]
 [Authorize]
 public class TasksController : ControllerBase
 {
@@ -20,54 +21,61 @@ public class TasksController : ControllerBase
         _logger = logger;
     }
 
-    /// <summary>Get all tasks with pagination</summary>
+    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+    /// <summary>Get all tasks for the authenticated user with pagination</summary>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<PagedResponse<TaskItemResponse>>), 200)]
-    public async Task<IActionResult> GetAll([FromQuery] TaskQueryParams queryParams)
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
-        var result = await _taskService.GetAllAsync(queryParams);
+        var result = await _taskService.GetAllAsync(GetUserId(), page, pageSize, ct);
         return Ok(ApiResponse<PagedResponse<TaskItemResponse>>.Ok(result));
     }
 
-    /// <summary>Get task by id</summary>
+    /// <summary>Get task by id for the authenticated user</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<TaskItemResponse>), 200)]
+    [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
     {
-        var result = await _taskService.GetByIdAsync(id);
+        var result = await _taskService.GetByIdAsync(id, GetUserId(), ct);
         return Ok(ApiResponse<TaskItemResponse>.Ok(result));
     }
 
-    /// <summary>Create a new task</summary>
+    /// <summary>Create a new task for the authenticated user</summary>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<TaskItemResponse>), 201)]
     [ProducesResponseType(400)]
-    public async Task<IActionResult> Create([FromBody] CreateTaskItemRequest request)
+    [ProducesResponseType(401)]
+    public async Task<IActionResult> Create([FromBody] CreateTaskItemRequest request, CancellationToken ct = default)
     {
-        var result = await _taskService.CreateAsync(request);
+        var result = await _taskService.CreateAsync(request, GetUserId(), ct);
         return CreatedAtAction(nameof(GetById), new { id = result.Id },
             ApiResponse<TaskItemResponse>.Ok(result, "Task created successfully."));
     }
 
-    /// <summary>Update an existing task</summary>
+    /// <summary>Update an existing task for the authenticated user</summary>
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(ApiResponse<TaskItemResponse>), 200)]
     [ProducesResponseType(400)]
+    [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskItemRequest request)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskItemRequest request, CancellationToken ct = default)
     {
-        var result = await _taskService.UpdateAsync(id, request);
+        var result = await _taskService.UpdateAsync(id, request, GetUserId(), ct);
         return Ok(ApiResponse<TaskItemResponse>.Ok(result, "Task updated successfully."));
     }
 
-    /// <summary>Delete a task (soft delete)</summary>
+    /// <summary>Soft delete a task for the authenticated user</summary>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(204)]
+    [ProducesResponseType(401)]
     [ProducesResponseType(404)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct = default)
     {
-        await _taskService.DeleteAsync(id);
+        await _taskService.DeleteAsync(id, GetUserId(), ct);
         return NoContent();
     }
 }

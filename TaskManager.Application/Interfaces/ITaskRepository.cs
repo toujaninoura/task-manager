@@ -6,11 +6,10 @@ namespace TaskManager.Application.Interfaces;
 
 public interface ITaskRepository
 {
-    Task<TaskItem?> GetByIdAsync(int id);
-    Task<TaskItem?> GetByIdNoTrackingAsync(int id);
-    Task<PagedResponse<TaskItem>> GetAllAsync(TaskQueryParams queryParams);
-    Task<TaskItem> CreateAsync(TaskItem taskItem);
-    Task<TaskItem> UpdateAsync(TaskItem taskItem);
-    Task DeleteAsync(TaskItem taskItem);
-    Task<bool> ExistsAsync(int id);
+    Task<IEnumerable<TaskItem>> GetAllByUserIdAsync(int userId, int page, int pageSize, CancellationToken ct = default);
+    Task<int> CountByUserIdAsync(int userId, CancellationToken ct = default);
+    Task<TaskItem?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default);
+    Task<TaskItem> CreateAsync(TaskItem task, CancellationToken ct = default);
+    Task UpdateAsync(TaskItem task, CancellationToken ct = default);
+    Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default);
 }

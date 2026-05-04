@@ -14,6 +14,7 @@ public class TaskItem
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
+
     public int UserId { get; set; }
     public User User { get; set; } = null!;
 }
