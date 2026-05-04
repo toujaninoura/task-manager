@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using TaskManager.Application.Common;
-using TaskManager.Application.DTOs;
 using TaskManager.Application.Interfaces;
 using TaskManager.Domain.Entities;
 using TaskManager.Infrastructure.Data;
@@ -16,74 +14,70 @@ public class TaskRepository : ITaskRepository
         _context = context;
     }
 
-    public async Task<TaskItem?> GetByIdAsync(int id)
-    {
-        return await _context.Tasks
-            .FirstOrDefaultAsync(t => t.Id == id);
-    }
-
-    public async Task<TaskItem?> GetByIdNoTrackingAsync(int id)
+    public async Task<IEnumerable<TaskItem>> GetAllByUserIdAsync(int userId, int page, int pageSize, CancellationToken ct = default)
     {
         return await _context.Tasks
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);
+            .Where(t => t.UserId == userId && !t.IsDeleted)
+            .OrderByDescending(t => t.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
     }
 
-    public async Task<PagedResponse<TaskItem>> GetAllAsync(TaskQueryParams queryParams)
+    public async Task<int> CountByUserIdAsync(int userId, CancellationToken ct = default)
     {
-        var query = _context.Tasks.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(queryParams.Search))
-            query = query.Where(t => t.Title.Contains(queryParams.Search) ||
-                                     (t.Description != null && t.Description.Contains(queryParams.Search)));
-
-        if (queryParams.Status.HasValue)
-            query = query.Where(t => t.Status == queryParams.Status.Value);
-
-        if (queryParams.Priority.HasValue)
-            query = query.Where(t => t.Priority == queryParams.Priority.Value);
-
-        query = queryParams.SortBy.ToLower() switch
-        {
-            "title" => queryParams.SortDir == "asc" ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title),
-            "priority" => queryParams.SortDir == "asc" ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
-            "duedate" => queryParams.SortDir == "asc" ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate),
-            _ => queryParams.SortDir == "asc" ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
-        };
-
-        var totalCount = await query.CountAsync();
-        var items = await query
-            .Skip((queryParams.Page - 1) * queryParams.PageSize)
-            .Take(queryParams.PageSize)
-            .ToListAsync();
-
-        return PagedResponse<TaskItem>.Create(items, queryParams.Page, queryParams.PageSize, totalCount);
+        return await _context.Tasks
+            .AsNoTracking()
+            .CountAsync(t => t.UserId == userId && !t.IsDeleted, ct);
     }
 
-    public async Task<TaskItem> CreateAsync(TaskItem taskItem)
+    public async Task<TaskItem?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default)
     {
-        await _context.Tasks.AddAsync(taskItem);
-        return taskItem;
+        return await _context.Tasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId && !t.IsDeleted, ct);
     }
 
-    public async Task<TaskItem> UpdateAsync(TaskItem taskItem)
+    public async Task<TaskItem?> GetByIdAndUserIdTrackingAsync(int id, int userId, CancellationToken ct = default)
     {
-        _context.Tasks.Update(taskItem);
-        return await Task.FromResult(taskItem);
+        return await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId && !t.IsDeleted, ct);
     }
 
-    public async Task DeleteAsync(TaskItem taskItem)
+    public async Task<TaskItem> CreateAsync(TaskItem task, CancellationToken ct = default)
     {
-        taskItem.IsDeleted = true;
-        taskItem.DeletedAt = DateTime.UtcNow;
-        _context.Tasks.Attach(taskItem);
-        _context.Entry(taskItem).Property(t => t.IsDeleted).IsModified = true;
-        _context.Entry(taskItem).Property(t => t.DeletedAt).IsModified = true;
-        await Task.CompletedTask;
+        await _context.Tasks.AddAsync(task, ct);
+        return task;
     }
 
-    public async Task<bool> ExistsAsync(int id)
+    public async Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
     {
-        return await _context.Tasks.AnyAsync(t => t.Id == id);
+        var existing = await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == task.Id && t.UserId == task.UserId, ct);
+
+        if (existing is null)
+            throw new InvalidOperationException($"Task with id {task.Id} not found for update.");
+
+        existing.Title = task.Title;
+        existing.Description = task.Description;
+        existing.Status = task.Status;
+        existing.Priority = task.Priority;
+        existing.DueDate = task.DueDate;
+        existing.UpdatedAt = task.UpdatedAt;
+
+        return existing;
+    }
+
+    public async Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default)
+    {
+        var task = await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
+
+        if (task is null)
+            return;
+
+        task.IsDeleted = true;
+        task.DeletedAt = DateTime.UtcNow;
     }
 }

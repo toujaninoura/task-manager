@@ -5,6 +5,7 @@ namespace TaskManager.Application.DTOs;
 public record CreateTaskItemRequest(
     string Title,
     string? Description,
+    TaskItemStatus Status,
     TaskPriority Priority,
     DateTime? DueDate
 );

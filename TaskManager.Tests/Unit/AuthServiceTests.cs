@@ -1,5 +1,6 @@
-using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
+using FluentValidation;
+using FluentValidation.Results;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -18,6 +19,8 @@ public class AuthServiceTests
     private Mock<IUnitOfWork> _unitOfWorkMock;
     private Mock<IPasswordHasher> _passwordHasherMock;
     private Mock<ITokenService> _tokenServiceMock;
+    private Mock<IValidator<RegisterRequest>> _registerValidatorMock;
+    private Mock<IValidator<LoginRequest>> _loginValidatorMock;
     private Mock<ILogger<AuthService>> _loggerMock;
     private AuthService _sut;
 
@@ -28,13 +31,22 @@ public class AuthServiceTests
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _passwordHasherMock = new Mock<IPasswordHasher>();
         _tokenServiceMock = new Mock<ITokenService>();
+        _registerValidatorMock = new Mock<IValidator<RegisterRequest>>();
+        _loginValidatorMock = new Mock<IValidator<LoginRequest>>();
         _loggerMock = new Mock<ILogger<AuthService>>();
+
+        _registerValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<RegisterRequest>(), default))
+            .ReturnsAsync(new ValidationResult());
+        _loginValidatorMock.Setup(v => v.ValidateAsync(It.IsAny<LoginRequest>(), default))
+            .ReturnsAsync(new ValidationResult());
 
         _sut = new AuthService(
             _userRepositoryMock.Object,
             _unitOfWorkMock.Object,
             _passwordHasherMock.Object,
             _tokenServiceMock.Object,
+            _registerValidatorMock.Object,
+            _loginValidatorMock.Object,
             _loggerMock.Object);
     }
 
