@@ -30,4 +30,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+using (var scope = app.Services.CreateScope())
+{
+    await TaskManager.Infrastructure.Data.DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+}
+
 app.Run();
