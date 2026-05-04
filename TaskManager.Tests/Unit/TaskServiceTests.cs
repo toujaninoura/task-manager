@@ -75,6 +75,25 @@ public class TaskServiceTests
         result.Data.All(t => true).Should().BeTrue();
     }
 
+    [Test]
+    public async Task GetAllAsync_WhenNoTasks_ReturnsEmptyPagedResponse()
+    {
+        const int userId = 99;
+
+        _taskRepositoryMock.Setup(r => r.GetAllByUserIdAsync(userId, 1, 10, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<TaskItem>());
+        _taskRepositoryMock.Setup(r => r.CountByUserIdAsync(userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0);
+
+        var result = await _sut.GetAllAsync(userId, 1, 10);
+
+        result.Should().NotBeNull();
+        result.TotalCount.Should().Be(0);
+        result.Data.Should().BeEmpty();
+        result.HasNext.Should().BeFalse();
+        result.HasPrev.Should().BeFalse();
+    }
+
     // --- GetByIdAsync ---
 
     [Test]
@@ -177,6 +196,34 @@ public class TaskServiceTests
         await act.Should().ThrowAsync<TaskManager.Domain.Exceptions.ValidationException>();
     }
 
+    [Test]
+    public async Task CreateAsync_SetsCreatedAtAndUpdatedAt()
+    {
+        const int userId = 5;
+        var request = new CreateTaskItemRequest("Timestamped Task", null, TaskItemStatus.Todo, TaskPriority.Low, null);
+        TaskItem? capturedTask = null;
+        var before = DateTime.UtcNow;
+
+        _createValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        _taskRepositoryMock
+            .Setup(r => r.CreateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()))
+            .Callback<TaskItem, CancellationToken>((t, _) => capturedTask = t)
+            .ReturnsAsync((TaskItem t, CancellationToken _) =>
+            {
+                t.Id = 10;
+                return t;
+            });
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _sut.CreateAsync(request, userId);
+
+        capturedTask.Should().NotBeNull();
+        capturedTask!.CreatedAt.Should().BeOnOrAfter(before);
+        capturedTask.UpdatedAt.Should().BeOnOrAfter(before);
+        capturedTask.UserId.Should().Be(userId);
+    }
+
     // --- UpdateAsync ---
 
     [Test]
@@ -245,6 +292,42 @@ public class TaskServiceTests
         Func<Task> act = async () => await _sut.UpdateAsync(taskId, request, userId);
 
         await act.Should().ThrowAsync<TaskManager.Domain.Exceptions.ValidationException>();
+    }
+
+    [Test]
+    public async Task UpdateAsync_SetsUpdatedAt()
+    {
+        const int taskId = 3;
+        const int userId = 2;
+        var request = new UpdateTaskItemRequest("Updated Title", null, TaskItemStatus.Done, TaskPriority.Low, null);
+        var existingTask = new TaskItem
+        {
+            Id = taskId,
+            Title = "Old Title",
+            UserId = userId,
+            Status = TaskItemStatus.Todo,
+            Priority = TaskPriority.Medium,
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        };
+        var before = DateTime.UtcNow;
+        TaskItem? capturedTask = null;
+
+        _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingTask);
+        _taskRepositoryMock
+            .Setup(r => r.UpdateAsync(It.IsAny<TaskItem>(), It.IsAny<CancellationToken>()))
+            .Callback<TaskItem, CancellationToken>((t, _) => capturedTask = t)
+            .ReturnsAsync((TaskItem t, CancellationToken _) => t);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        await _sut.UpdateAsync(taskId, request, userId);
+
+        capturedTask.Should().NotBeNull();
+        capturedTask!.UpdatedAt.Should().BeOnOrAfter(before);
+        capturedTask.Title.Should().Be("Updated Title");
     }
 
     // --- DeleteAsync ---
