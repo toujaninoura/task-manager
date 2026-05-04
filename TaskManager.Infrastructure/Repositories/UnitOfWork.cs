@@ -6,14 +6,14 @@ namespace TaskManager.Infrastructure.Repositories;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
-    private ITaskRepository? _tasks;
 
-    public UnitOfWork(AppDbContext context)
+    public ITaskRepository Tasks { get; }
+
+    public UnitOfWork(AppDbContext context, ITaskRepository taskRepository)
     {
         _context = context;
+        Tasks = taskRepository;
     }
-
-    public ITaskRepository Tasks => _tasks ??= new TaskRepository(_context);
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
