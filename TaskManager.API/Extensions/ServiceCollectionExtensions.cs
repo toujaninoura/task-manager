@@ -18,6 +18,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         services.AddScoped<ITaskService, TaskService>();
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 
@@ -29,6 +30,7 @@ public static class ServiceCollectionExtensions
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
         services.AddScoped<ITaskRepository, TaskRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         return services;
     }
@@ -49,8 +51,9 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var jwtSecret = configuration["JWT:Secret"]
-            ?? throw new InvalidOperationException("JWT:Secret is not configured.");
+        var jwtSecret = configuration["JWT:Secret"];
+        if (string.IsNullOrWhiteSpace(jwtSecret))
+            throw new InvalidOperationException("JWT:Secret is not configured. Use dotnet user-secrets to set it.");
 
         var key = Encoding.UTF8.GetBytes(jwtSecret);
 
