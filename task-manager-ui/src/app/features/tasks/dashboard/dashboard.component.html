@@ -1,0 +1,40 @@
+<div class="container py-4">
+  <h2 class="mb-4">Tableau de bord</h2>
+  <div class="row g-3">
+    <div class="col-6 col-md-3">
+      <div class="card text-white bg-secondary h-100">
+        <div class="card-body text-center">
+          <h1 class="display-4">{{ stats.total }}</h1>
+          <p class="card-text">Total</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-dark bg-warning h-100">
+        <div class="card-body text-center">
+          <h1 class="display-4">{{ stats.todo }}</h1>
+          <p class="card-text">Todo</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-white bg-primary h-100">
+        <div class="card-body text-center">
+          <h1 class="display-4">{{ stats.inProgress }}</h1>
+          <p class="card-text">In Progress</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-md-3">
+      <div class="card text-white bg-success h-100">
+        <div class="card-body text-center">
+          <h1 class="display-4">{{ stats.done }}</h1>
+          <p class="card-text">Done</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mt-4">
+    <a routerLink="list" class="btn btn-primary">Voir les tâches</a>
+  </div>
+</div>
