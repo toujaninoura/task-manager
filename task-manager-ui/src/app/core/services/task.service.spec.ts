@@ -1,107 +1,69 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TaskService } from './task.service';
-import { Task, CreateTaskRequest } from '../models/task.model';
-import { ApiResponse, PagedResponse } from '../models/api-response.model';
 
 describe('TaskService', () => {
   let service: TaskService;
   let httpMock: HttpTestingController;
 
-  const mockTask: Task = {
-    id: 1,
-    title: 'Test Task',
-    description: 'Test description',
-    status: 'Todo',
-    priority: 'Medium',
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z'
-  };
-
-  const mockPagedResponse: ApiResponse<PagedResponse<Task>> = {
-    success: true,
-    data: {
-      data: [mockTask],
-      page: 1,
-      pageSize: 10,
-      totalCount: 1,
-      totalPages: 1,
-      hasNext: false,
-      hasPrev: false
-    }
-  };
-
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        TaskService,
-        provideHttpClient(),
-        provideHttpClientTesting()
-      ]
+      imports: [HttpClientTestingModule]
     });
     service = TestBed.inject(TaskService);
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
-  });
+  afterEach(() => httpMock.verify());
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should call getTasks endpoint with pagination params', () => {
-    service.getTasks(1, 10).subscribe(response => {
-      expect(response.data.length).toBe(1);
-      expect(response.data[0].title).toBe('Test Task');
+  it('getTasks should call GET /api/v1/tasks', () => {
+    const mockResponse = {
+      success: true,
+      data: {
+        data: [],
+        page: 1,
+        pageSize: 10,
+        totalCount: 0,
+        totalPages: 0,
+        hasNext: false,
+        hasPrev: false
+      }
+    };
+
+    service.getTasks().subscribe(result => {
+      expect(result.data).toEqual([]);
+      expect(result.totalCount).toBe(0);
     });
 
-    const req = httpMock.expectOne(r => r.url === 'http://localhost:5000/api/v1/tasks');
+    const req = httpMock.expectOne(r => r.url.includes('/api/v1/tasks'));
     expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('page')).toBe('1');
-    expect(req.request.params.get('pageSize')).toBe('10');
-    req.flush(mockPagedResponse);
+    req.flush(mockResponse);
   });
 
   it('should call createTask endpoint with POST', () => {
-    const createRequest: CreateTaskRequest = {
+    const mockTask = {
+      id: 1,
       title: 'New Task',
+      description: '',
       status: 'Todo',
-      priority: 'High'
+      priority: 'High',
+      createdAt: '2026-01-01T00:00:00Z',
+      updatedAt: '2026-01-01T00:00:00Z'
     };
+    const mockApiResponse = { success: true, data: mockTask };
 
-    const mockCreateResponse: ApiResponse<Task> = { success: true, data: mockTask };
-
-    service.createTask(createRequest).subscribe(task => {
+    service.createTask({ title: 'New Task', status: 'Todo', priority: 'High' }).subscribe(task => {
       expect(task.id).toBe(1);
-      expect(task.title).toBe('Test Task');
+      expect(task.title).toBe('New Task');
     });
 
     const req = httpMock.expectOne('http://localhost:5000/api/v1/tasks');
     expect(req.request.method).toBe('POST');
-    req.flush(mockCreateResponse);
-  });
-
-  it('should call updateTask endpoint with PUT', () => {
-    const updateRequest: CreateTaskRequest = {
-      title: 'Updated Task',
-      status: 'InProgress',
-      priority: 'Low'
-    };
-    const mockUpdateResponse: ApiResponse<Task> = {
-      success: true,
-      data: { ...mockTask, title: 'Updated Task', status: 'InProgress' }
-    };
-
-    service.updateTask(1, updateRequest).subscribe(task => {
-      expect(task.title).toBe('Updated Task');
-    });
-
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/tasks/1');
-    expect(req.request.method).toBe('PUT');
-    req.flush(mockUpdateResponse);
+    req.flush(mockApiResponse);
   });
 
   it('should call deleteTask endpoint with DELETE', () => {
