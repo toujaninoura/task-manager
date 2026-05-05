@@ -1,5 +1,6 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -43,7 +44,7 @@ export class LoginComponent {
       : this.authService.register(request);
     obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.router.navigate(['/tasks']),
-      error: (err: any) => this.errorMessage = err.error?.message || 'Une erreur est survenue'
+      error: (err: HttpErrorResponse) => { this.errorMessage = err.error?.message || 'Une erreur est survenue'; }
     });
   }
 }
