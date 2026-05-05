@@ -4,6 +4,8 @@
     <a routerLink="../form" class="btn btn-primary">+ Nouvelle tâche</a>
   </div>
 
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
   <div *ngIf="loading" class="text-center py-5">
     <div class="spinner-border" role="status">
       <span class="visually-hidden">Chargement...</span>

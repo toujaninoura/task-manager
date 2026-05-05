@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe, SlicePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TaskService } from '../../../core/services/task.service';
 import { Task, TaskStatus, TaskPriority } from '../../../core/models/task.model';
 
@@ -11,8 +12,10 @@ import { Task, TaskStatus, TaskPriority } from '../../../core/models/task.model'
   templateUrl: './task-list.component.html'
 })
 export class TaskListComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
   tasks: Task[] = [];
   loading = false;
+  errorMessage = '';
 
   constructor(private taskService: TaskService) {}
 
@@ -22,20 +25,28 @@ export class TaskListComponent implements OnInit {
 
   loadTasks(): void {
     this.loading = true;
-    this.taskService.getTasks().subscribe({
-      next: (response) => {
-        this.tasks = response.data;
-        this.loading = false;
-      },
-      error: () => {
-        this.loading = false;
-      }
-    });
+    this.taskService.getTasks()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.tasks = response.data;
+          this.loading = false;
+        },
+        error: () => {
+          this.errorMessage = 'Erreur lors du chargement.';
+          this.loading = false;
+        }
+      });
   }
 
   deleteTask(id: number): void {
     if (!confirm('Supprimer cette tâche ?')) return;
-    this.taskService.deleteTask(id).subscribe(() => this.loadTasks());
+    this.taskService.deleteTask(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => this.loadTasks(),
+        error: () => { this.errorMessage = 'Impossible de supprimer cette tâche.'; }
+      });
   }
 
   trackById(_index: number, task: Task): number {
