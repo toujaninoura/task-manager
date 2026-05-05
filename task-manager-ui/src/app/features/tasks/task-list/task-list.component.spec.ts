@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { TaskListComponent } from './task-list.component';
 import { TaskService } from '../../../core/services/task.service';
 import { PagedResponse } from '../../../core/models/api-response.model';
@@ -11,19 +11,41 @@ describe('TaskListComponent', () => {
   let fixture: ComponentFixture<TaskListComponent>;
   let taskServiceSpy: jasmine.SpyObj<TaskService>;
 
+  const mockTasks: Task[] = [
+    {
+      id: 1, title: 'Task Todo Low', status: 'Todo', priority: 'Low',
+      createdAt: '2026-01-01T00:00:00', updatedAt: '2026-01-01T00:00:00'
+    },
+    {
+      id: 2, title: 'Task InProgress Medium', status: 'InProgress', priority: 'Medium',
+      createdAt: '2026-01-02T00:00:00', updatedAt: '2026-01-02T00:00:00'
+    },
+    {
+      id: 3, title: 'Task Done High', status: 'Done', priority: 'High',
+      createdAt: '2026-01-03T00:00:00', updatedAt: '2026-01-03T00:00:00'
+    },
+    {
+      id: 4, title: 'Task Todo High', status: 'Todo', priority: 'High',
+      createdAt: '2026-01-04T00:00:00', updatedAt: '2026-01-04T00:00:00'
+    }
+  ];
+
   const emptyPagedResponse: PagedResponse<Task> = {
     data: [],
-    page: 1,
-    pageSize: 10,
-    totalCount: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false
+    page: 1, pageSize: 10, totalCount: 0, totalPages: 0,
+    hasNext: false, hasPrev: false
+  };
+
+  const filledPagedResponse: PagedResponse<Task> = {
+    data: mockTasks,
+    page: 1, pageSize: 10, totalCount: 4, totalPages: 1,
+    hasNext: false, hasPrev: false
   };
 
   beforeEach(async () => {
     taskServiceSpy = jasmine.createSpyObj('TaskService', ['getTasks', 'deleteTask']);
     taskServiceSpy.getTasks.and.returnValue(of(emptyPagedResponse));
+    taskServiceSpy.deleteTask.and.returnValue(of(void 0));
 
     await TestBed.configureTestingModule({
       imports: [TaskListComponent, RouterTestingModule],
@@ -75,5 +97,69 @@ describe('TaskListComponent', () => {
 
   it('should show loading false after tasks loaded', () => {
     expect(component.loading).toBeFalse();
+  });
+
+  // --- Tests filtres issue #11 ---
+
+  it('applyFilters_WithStatusTodo_ReturnsOnlyTodoTasks', () => {
+    component.allTasks = mockTasks;
+    component.filterStatus = 'Todo';
+    component.filterPriority = '';
+    component.applyFilters();
+
+    expect(component.tasks.length).toBe(2);
+    component.tasks.forEach(t => expect(t.status).toBe('Todo'));
+    expect(component.filteredCount).toBe(2);
+  });
+
+  it('applyFilters_WithPriorityHigh_ReturnsOnlyHighPriorityTasks', () => {
+    component.allTasks = mockTasks;
+    component.filterStatus = '';
+    component.filterPriority = 'High';
+    component.applyFilters();
+
+    expect(component.tasks.length).toBe(2);
+    component.tasks.forEach(t => expect(t.priority).toBe('High'));
+    expect(component.filteredCount).toBe(2);
+  });
+
+  it('applyFilters_WithStatusAndPriority_ReturnsCombinedFilter', () => {
+    component.allTasks = mockTasks;
+    component.filterStatus = 'Todo';
+    component.filterPriority = 'High';
+    component.applyFilters();
+
+    expect(component.tasks.length).toBe(1);
+    expect(component.tasks[0].id).toBe(4);
+    expect(component.filteredCount).toBe(1);
+  });
+
+  it('resetFilters_ClearsAllFilters', () => {
+    component.allTasks = mockTasks;
+    component.filterStatus = 'Todo';
+    component.filterPriority = 'High';
+    component.applyFilters();
+    expect(component.tasks.length).toBe(1);
+
+    component.resetFilters();
+
+    expect(component.filterStatus).toBe('');
+    expect(component.filterPriority).toBe('');
+    expect(component.tasks.length).toBe(4);
+    expect(component.filteredCount).toBe(4);
+  });
+
+  it('should show error message when getTasks fails', () => {
+    taskServiceSpy.getTasks.and.returnValue(throwError(() => new Error('Network error')));
+    component.loadTasks();
+    expect(component.errorMessage).toBe('Erreur lors du chargement.');
+  });
+
+  it('should load all tasks and apply filters after loadTasks', () => {
+    taskServiceSpy.getTasks.and.returnValue(of(filledPagedResponse));
+    component.loadTasks();
+
+    expect(component.allTasks.length).toBe(4);
+    expect(component.filteredCount).toBe(4);
   });
 });

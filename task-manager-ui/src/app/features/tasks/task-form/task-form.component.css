@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.card {
+  border-radius: 0.5rem;
+}
+
+.card-header {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
