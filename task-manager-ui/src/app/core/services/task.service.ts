@@ -33,6 +33,12 @@ export class TaskService {
       .pipe(map(r => r.data));
   }
 
+  getTaskById(id: number): Observable<Task> {
+    return this.http
+      .get<ApiResponse<Task>>(`${this.API}/${id}`)
+      .pipe(map(r => r.data));
+  }
+
   deleteTask(id: number): Observable<void> {
     return this.http.delete<void>(`${this.API}/${id}`);
   }

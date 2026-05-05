@@ -1,0 +1,115 @@
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">{{ isEditMode ? 'Modifier la tâche' : 'Nouvelle tâche' }}</h4>
+        </div>
+
+        <div class="card-body">
+
+          <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+          <div *ngIf="loading" class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+          </div>
+
+          <form *ngIf="!loading" [formGroup]="form" (ngSubmit)="onSubmit()">
+
+            <!-- Titre -->
+            <div class="mb-3">
+              <label for="title" class="form-label fw-semibold">Titre <span class="text-danger">*</span></label>
+              <input
+                id="title"
+                type="text"
+                class="form-control"
+                [class.is-invalid]="form.get('title')?.invalid && form.get('title')?.touched"
+                formControlName="title"
+                placeholder="Titre de la tâche"
+                maxlength="200"
+              />
+              <div class="invalid-feedback">
+                <span *ngIf="form.get('title')?.errors?.['required']">Le titre est obligatoire.</span>
+                <span *ngIf="form.get('title')?.errors?.['maxlength']">Le titre ne doit pas dépasser 200 caractères.</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label for="description" class="form-label fw-semibold">Description</label>
+              <textarea
+                id="description"
+                class="form-control"
+                [class.is-invalid]="form.get('description')?.invalid && form.get('description')?.touched"
+                formControlName="description"
+                rows="4"
+                placeholder="Description de la tâche (optionnel)"
+                maxlength="1000"
+              ></textarea>
+              <div class="invalid-feedback">
+                <span *ngIf="form.get('description')?.errors?.['maxlength']">La description ne doit pas dépasser 1000 caractères.</span>
+              </div>
+            </div>
+
+            <!-- Statut et Priorité -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="status" class="form-label fw-semibold">Statut <span class="text-danger">*</span></label>
+                <select
+                  id="status"
+                  class="form-select"
+                  [class.is-invalid]="form.get('status')?.invalid && form.get('status')?.touched"
+                  formControlName="status"
+                >
+                  <option value="Todo">Todo</option>
+                  <option value="InProgress">In Progress</option>
+                  <option value="Done">Done</option>
+                </select>
+                <div class="invalid-feedback">Le statut est obligatoire.</div>
+              </div>
+
+              <div class="col-md-6">
+                <label for="priority" class="form-label fw-semibold">Priorité <span class="text-danger">*</span></label>
+                <select
+                  id="priority"
+                  class="form-select"
+                  [class.is-invalid]="form.get('priority')?.invalid && form.get('priority')?.touched"
+                  formControlName="priority"
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                </select>
+                <div class="invalid-feedback">La priorité est obligatoire.</div>
+              </div>
+            </div>
+
+            <!-- Date d'échéance -->
+            <div class="mb-4">
+              <label for="dueDate" class="form-label fw-semibold">Date d'échéance</label>
+              <input
+                id="dueDate"
+                type="date"
+                class="form-control"
+                formControlName="dueDate"
+              />
+            </div>
+
+            <!-- Boutons -->
+            <div class="d-flex gap-2 justify-content-end">
+              <a routerLink="/tasks/list" class="btn btn-outline-secondary">Annuler</a>
+              <button type="submit" class="btn btn-primary" [disabled]="loading">
+                {{ isEditMode ? 'Enregistrer' : 'Créer' }}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

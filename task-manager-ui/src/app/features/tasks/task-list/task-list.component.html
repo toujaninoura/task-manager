@@ -6,6 +6,51 @@
 
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+  <!-- Filtres -->
+  <div class="card mb-3">
+    <div class="card-body">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label for="filterStatus" class="form-label fw-semibold mb-1">Statut</label>
+          <select
+            id="filterStatus"
+            class="form-select"
+            [(ngModel)]="filterStatus"
+            (ngModelChange)="applyFilters()"
+          >
+            <option value="">Tous</option>
+            <option value="Todo">Todo</option>
+            <option value="InProgress">InProgress</option>
+            <option value="Done">Done</option>
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="filterPriority" class="form-label fw-semibold mb-1">Priorité</label>
+          <select
+            id="filterPriority"
+            class="form-select"
+            [(ngModel)]="filterPriority"
+            (ngModelChange)="applyFilters()"
+          >
+            <option value="">Tous</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+          </select>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end gap-2">
+          <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">Réinitialiser</button>
+        </div>
+      </div>
+
+      <div class="mt-2 text-muted small">
+        <span>{{ filteredCount }} résultat(s)</span>
+      </div>
+    </div>
+  </div>
+
   <div *ngIf="loading" class="text-center py-5">
     <div class="spinner-border" role="status">
       <span class="visually-hidden">Chargement...</span>
@@ -13,7 +58,7 @@
   </div>
 
   <div *ngIf="!loading && tasks.length === 0" class="alert alert-info">
-    Aucune tâche. Créez votre première tâche !
+    Aucune tâche correspondant aux filtres sélectionnés.
   </div>
 
   <div *ngIf="!loading && tasks.length > 0" class="table-responsive">
