@@ -1,8 +1,11 @@
 import { Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { TaskListComponent } from './task-list/task-list.component';
+import { TaskFormComponent } from './task-form/task-form.component';
 
 export const TASKS_ROUTES: Routes = [
   { path: '', component: DashboardComponent },
-  { path: 'list', component: TaskListComponent }
+  { path: 'list', component: TaskListComponent },
+  { path: 'form', component: TaskFormComponent },
+  { path: 'form/:id', component: TaskFormComponent }
 ];
