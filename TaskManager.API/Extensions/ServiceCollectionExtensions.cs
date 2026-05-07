@@ -21,6 +21,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<ITaskService, TaskService>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<ITaskSharingService, TaskSharingService>();
         return services;
     }
 
@@ -35,6 +36,7 @@ public static class ServiceCollectionExtensions
 
         services.AddScoped<ITaskRepository, TaskRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<ITaskCollaboratorRepository, TaskCollaboratorRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();

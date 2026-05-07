@@ -22,6 +22,7 @@ public class TaskServiceTests
 {
     private Mock<IUnitOfWork> _unitOfWorkMock;
     private Mock<ITaskRepository> _taskRepositoryMock;
+    private Mock<ITaskCollaboratorRepository> _collaboratorRepositoryMock;
     private Mock<ILogger<TaskService>> _loggerMock;
     private Mock<IValidator<CreateTaskItemRequest>> _createValidatorMock;
     private Mock<IValidator<UpdateTaskItemRequest>> _updateValidatorMock;
@@ -33,11 +34,13 @@ public class TaskServiceTests
     {
         _unitOfWorkMock = new Mock<IUnitOfWork>();
         _taskRepositoryMock = new Mock<ITaskRepository>();
+        _collaboratorRepositoryMock = new Mock<ITaskCollaboratorRepository>();
         _loggerMock = new Mock<ILogger<TaskService>>();
         _createValidatorMock = new Mock<IValidator<CreateTaskItemRequest>>();
         _updateValidatorMock = new Mock<IValidator<UpdateTaskItemRequest>>();
 
         _unitOfWorkMock.Setup(u => u.Tasks).Returns(_taskRepositoryMock.Object);
+        _unitOfWorkMock.Setup(u => u.Collaborators).Returns(_collaboratorRepositoryMock.Object);
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<TaskItemProfile>());
         _mapper = config.CreateMapper();
@@ -101,6 +104,8 @@ public class TaskServiceTests
     {
         _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(99, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskItem?)null);
+        _collaboratorRepositoryMock.Setup(r => r.IsAcceptedCollaboratorAsync(99, 1, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         Func<Task> act = async () => await _sut.GetByIdAsync(99, 1);
 
@@ -115,6 +120,8 @@ public class TaskServiceTests
 
         _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(taskId, wrongUserId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskItem?)null);
+        _collaboratorRepositoryMock.Setup(r => r.IsAcceptedCollaboratorAsync(taskId, wrongUserId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         Func<Task> act = async () => await _sut.GetByIdAsync(taskId, wrongUserId);
 
@@ -262,7 +269,7 @@ public class TaskServiceTests
     }
 
     [Test]
-    public async Task UpdateAsync_WhenTaskNotFound_ThrowsNotFoundException()
+    public async Task UpdateAsync_WhenNotOwnerAndNotEditor_ThrowsUnauthorizedException()
     {
         const int taskId = 99;
         const int userId = 1;
@@ -272,10 +279,12 @@ public class TaskServiceTests
             .ReturnsAsync(new ValidationResult());
         _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(taskId, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskItem?)null);
+        _collaboratorRepositoryMock.Setup(r => r.GetUserRoleAsync(taskId, userId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskShareRole?)null);
 
         Func<Task> act = async () => await _sut.UpdateAsync(taskId, request, userId);
 
-        await act.Should().ThrowAsync<NotFoundException>();
+        await act.Should().ThrowAsync<UnauthorizedException>();
     }
 
     [Test]

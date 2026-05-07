@@ -32,6 +32,19 @@ public class TaskRepository : ITaskRepository
             .CountAsync(t => t.UserId == userId && !t.IsDeleted, ct);
     }
 
+    public async Task<TaskItem?> GetByIdAsync(int id, CancellationToken ct = default)
+    {
+        return await _context.Tasks
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
+    }
+
+    public async Task<TaskItem?> GetByIdTrackingAsync(int id, CancellationToken ct = default)
+    {
+        return await _context.Tasks
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted, ct);
+    }
+
     public async Task<TaskItem?> GetByIdAndUserIdAsync(int id, int userId, CancellationToken ct = default)
     {
         return await _context.Tasks
