@@ -3,10 +3,17 @@ using TaskManager.API.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(options => {
+    options.AddPolicy("AngularApp", policy => {
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddCorsPolicy();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddSwaggerWithBearer();
 builder.Services.AddMappingServices();
@@ -24,7 +31,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAngular");
+app.UseCors("AngularApp");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -32,7 +39,7 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
-    await TaskManager.Infrastructure.Data.DatabaseSeeder.SeedAsync(scope.ServiceProvider);
+    await TaskManager.Infrastructure.Data.DatabaseSeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
 }
 
 app.Run();

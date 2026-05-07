@@ -53,6 +53,8 @@ public class TaskRepository : ITaskRepository
 
     public Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
     {
+        if (_context.Entry(task).State == EntityState.Detached)
+            _context.Tasks.Update(task);
         return Task.FromResult(task);
     }
 

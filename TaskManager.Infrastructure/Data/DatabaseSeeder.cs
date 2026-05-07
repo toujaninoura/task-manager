@@ -1,5 +1,6 @@
 using BCrypt.Net;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TaskManager.Domain.Entities;
 using TaskManager.Domain.Enums;
@@ -8,7 +9,7 @@ namespace TaskManager.Infrastructure.Data;
 
 public static class DatabaseSeeder
 {
-    public static async Task SeedAsync(IServiceProvider serviceProvider)
+    public static async Task SeedAsync(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         var context = serviceProvider.GetRequiredService<AppDbContext>();
 
@@ -16,11 +17,12 @@ public static class DatabaseSeeder
             return;
 
         var now = DateTime.UtcNow;
+        var seedPassword = configuration["SeedData:DefaultPassword"] ?? "SeedDev@2024!";
 
         var demoUser = new User
         {
             Email = "demo@taskmanager.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Seed@12345!"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(seedPassword),
             CreatedAt = now
         };
 
