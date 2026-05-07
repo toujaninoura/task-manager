@@ -17,6 +17,7 @@ export class TaskShareModalComponent implements OnChanges {
 
   @Input() task: Task | null = null;
   @Output() collaboratorChanged = new EventEmitter<void>();
+  @Output() modalClosed = new EventEmitter<void>();
 
   inviteForm: FormGroup;
   collaborators: CollaboratorResponse[] = [];
@@ -86,6 +87,10 @@ export class TaskShareModalComponent implements OnChanges {
           this.errorMessage = 'Impossible de retirer ce collaborateur.';
         }
       });
+  }
+
+  close(): void {
+    this.modalClosed.emit();
   }
 
   getRoleBadgeClass(role: TaskShareRole): string {

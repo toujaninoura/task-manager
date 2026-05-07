@@ -8,10 +8,11 @@ import {
   InviteCollaboratorRequest
 } from '../models/sharing.model';
 import { ApiResponse } from '../models/api-response.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class TaskSharingService {
-  private readonly API = 'https://localhost:7063/api/v1/tasks';
+  private readonly API = `${environment.apiUrl}/api/v1/tasks`;
 
   constructor(private http: HttpClient) {}
 

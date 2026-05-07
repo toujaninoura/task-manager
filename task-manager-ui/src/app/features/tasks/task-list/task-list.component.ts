@@ -27,6 +27,7 @@ export class TaskListComponent implements OnInit {
   filteredCount = 0;
 
   selectedTask: Task | null = null;
+  showShareModal = false;
   currentUserId: number | null = null;
 
   constructor(private taskService: TaskService, private authService: AuthService) {}
@@ -86,10 +87,11 @@ export class TaskListComponent implements OnInit {
 
   openShareModal(task: Task): void {
     this.selectedTask = task;
-    const el = document.getElementById('shareModal');
-    if (el) {
-      new (window as any).bootstrap.Modal(el).show();
-    }
+    this.showShareModal = true;
+  }
+
+  closeShareModal(): void {
+    this.showShareModal = false;
   }
 
   isOwner(task: Task): boolean {

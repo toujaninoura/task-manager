@@ -1,9 +1,9 @@
-<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="shareModalLabel">Partager "{{ task?.title }}"</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+        <h5 class="modal-title">Partager "{{ task?.title }}"</h5>
+        <button type="button" class="btn-close" aria-label="Fermer" (click)="close()"></button>
       </div>
       <div class="modal-body">
         <!-- Formulaire d'invitation -->

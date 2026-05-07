@@ -109,4 +109,9 @@
   </div>
 </div>
 
-<app-task-share-modal [task]="selectedTask" (collaboratorChanged)="loadTasks()"></app-task-share-modal>
+<app-task-share-modal
+  *ngIf="showShareModal"
+  [task]="selectedTask"
+  (collaboratorChanged)="loadTasks()"
+  (modalClosed)="closeShareModal()">
+</app-task-share-modal>

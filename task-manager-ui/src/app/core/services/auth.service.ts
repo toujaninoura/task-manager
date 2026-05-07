@@ -4,11 +4,12 @@ import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { AuthRequest, AuthResponse } from '../models/user.model';
 import { ApiResponse } from '../models/api-response.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
-  private readonly API = 'https://localhost:7063/api/v1/auth';
+  private readonly API = `${environment.apiUrl}/api/v1/auth`;
 
   constructor(private http: HttpClient) {}
 
