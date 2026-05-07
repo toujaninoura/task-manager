@@ -53,7 +53,6 @@ public class TaskRepository : ITaskRepository
 
     public Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
     {
-        _context.Entry(task).State = EntityState.Modified;
         return Task.FromResult(task);
     }
 
