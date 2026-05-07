@@ -21,7 +21,7 @@ public static class DatabaseSeeder
         var demoUser = new User
         {
             Email = "demo@taskmanager.com",
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Demo1234"),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("Seed@12345!"),
             CreatedAt = now
         };
 

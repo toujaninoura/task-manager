@@ -41,7 +41,5 @@ public class TaskCollaboratorConfiguration : IEntityTypeConfiguration<TaskCollab
 
         builder.HasIndex(tc => new { tc.TaskId, tc.InvitedUserId })
             .IsUnique();
-
-        builder.HasQueryFilter(tc => !tc.Task.IsDeleted);
     }
 }

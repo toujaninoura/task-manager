@@ -51,22 +51,10 @@ public class TaskRepository : ITaskRepository
         return task;
     }
 
-    public async Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
+    public Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default)
     {
-        var existing = await _context.Tasks
-            .FirstOrDefaultAsync(t => t.Id == task.Id && t.UserId == task.UserId, ct);
-
-        if (existing is null)
-            throw new InvalidOperationException($"Task with id {task.Id} not found for update.");
-
-        existing.Title = task.Title;
-        existing.Description = task.Description;
-        existing.Status = task.Status;
-        existing.Priority = task.Priority;
-        existing.DueDate = task.DueDate;
-        existing.UpdatedAt = task.UpdatedAt;
-
-        return existing;
+        _context.Entry(task).State = EntityState.Modified;
+        return Task.FromResult(task);
     }
 
     public async Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default)
