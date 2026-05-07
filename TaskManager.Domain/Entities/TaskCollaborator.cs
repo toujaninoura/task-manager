@@ -13,6 +13,8 @@ public class TaskCollaborator
     public User InvitedByUser { get; set; } = null!;
     public TaskShareRole Role { get; set; }
     public InvitationStatus Status { get; set; } = InvitationStatus.Pending;
-    public DateTime InvitedAt { get; set; }
+    public DateTime InvitedAt { get; set; } = DateTime.UtcNow;
     public DateTime? RespondedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -26,6 +26,14 @@ public class TaskCollaboratorConfiguration : IEntityTypeConfiguration<TaskCollab
             .IsRequired()
             .HasDefaultValueSql("GETUTCDATE()");
 
+        builder.Property(tc => tc.CreatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("GETUTCDATE()");
+
+        builder.Property(tc => tc.UpdatedAt)
+            .IsRequired()
+            .HasDefaultValueSql("GETUTCDATE()");
+
         builder.HasOne(tc => tc.Task)
             .WithMany(t => t.Collaborators)
             .HasForeignKey(tc => tc.TaskId)

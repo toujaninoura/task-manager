@@ -10,8 +10,7 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        using var scope = serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var context = serviceProvider.GetRequiredService<AppDbContext>();
 
         if (await context.Tasks.AnyAsync())
             return;
