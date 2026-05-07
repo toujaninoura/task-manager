@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TaskManager.Application.Common;
 using TaskManager.Application.DTOs;
 using TaskManager.Application.Interfaces;
+using TaskManager.Domain.Exceptions;
 
 namespace TaskManager.API.Controllers;
 
@@ -21,7 +22,13 @@ public class TasksController : ControllerBase
         _logger = logger;
     }
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private int GetUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(claim, out var userId))
+            throw new UnauthorizedException("User identity not found in token.");
+        return userId;
+    }
 
     /// <summary>Get all tasks for the authenticated user with pagination</summary>
     [HttpGet]
