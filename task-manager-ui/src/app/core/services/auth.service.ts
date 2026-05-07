@@ -8,7 +8,7 @@ import { ApiResponse } from '../models/api-response.model';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
-  private readonly API = 'http://localhost:5000/api/v1/auth';
+  private readonly API = 'https://localhost:7063/api/v1/auth';
 
   constructor(private http: HttpClient) {}
 
@@ -44,5 +44,17 @@ export class AuthService {
 
   setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const id = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+      return id ? parseInt(id, 10) : null;
+    } catch {
+      return null;
+    }
   }
 }

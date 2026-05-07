@@ -54,10 +54,10 @@ describe('DashboardComponent', () => {
 
   it('should compute stats correctly from tasks', () => {
     const mockTasks: Task[] = [
-      { id: 1, title: 'T1', status: 'Todo', priority: 'Low', createdAt: '', updatedAt: '' },
-      { id: 2, title: 'T2', status: 'InProgress', priority: 'Medium', createdAt: '', updatedAt: '' },
-      { id: 3, title: 'T3', status: 'Done', priority: 'High', createdAt: '', updatedAt: '' },
-      { id: 4, title: 'T4', status: 'Todo', priority: 'Low', createdAt: '', updatedAt: '' }
+      { id: 1, title: 'T1', status: 'Todo', priority: 'Low', createdAt: '', updatedAt: '', isShared: false, collaboratorCount: 0, userId: 1 },
+      { id: 2, title: 'T2', status: 'InProgress', priority: 'Medium', createdAt: '', updatedAt: '', isShared: false, collaboratorCount: 0, userId: 1 },
+      { id: 3, title: 'T3', status: 'Done', priority: 'High', createdAt: '', updatedAt: '', isShared: false, collaboratorCount: 0, userId: 1 },
+      { id: 4, title: 'T4', status: 'Todo', priority: 'Low', createdAt: '', updatedAt: '', isShared: false, collaboratorCount: 0, userId: 1 }
     ];
     taskServiceSpy.getTasks.and.returnValue(of({ ...emptyPagedResponse, data: mockTasks, totalCount: 4 }));
     component.ngOnInit();

@@ -3,6 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { TaskListComponent } from './task-list.component';
 import { TaskService } from '../../../core/services/task.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { PagedResponse } from '../../../core/models/api-response.model';
 import { Task } from '../../../core/models/task.model';
 
@@ -10,23 +11,28 @@ describe('TaskListComponent', () => {
   let component: TaskListComponent;
   let fixture: ComponentFixture<TaskListComponent>;
   let taskServiceSpy: jasmine.SpyObj<TaskService>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
 
   const mockTasks: Task[] = [
     {
       id: 1, title: 'Task Todo Low', status: 'Todo', priority: 'Low',
-      createdAt: '2026-01-01T00:00:00', updatedAt: '2026-01-01T00:00:00'
+      createdAt: '2026-01-01T00:00:00', updatedAt: '2026-01-01T00:00:00',
+      isShared: false, collaboratorCount: 0, userId: 1
     },
     {
       id: 2, title: 'Task InProgress Medium', status: 'InProgress', priority: 'Medium',
-      createdAt: '2026-01-02T00:00:00', updatedAt: '2026-01-02T00:00:00'
+      createdAt: '2026-01-02T00:00:00', updatedAt: '2026-01-02T00:00:00',
+      isShared: false, collaboratorCount: 0, userId: 1
     },
     {
       id: 3, title: 'Task Done High', status: 'Done', priority: 'High',
-      createdAt: '2026-01-03T00:00:00', updatedAt: '2026-01-03T00:00:00'
+      createdAt: '2026-01-03T00:00:00', updatedAt: '2026-01-03T00:00:00',
+      isShared: false, collaboratorCount: 0, userId: 1
     },
     {
       id: 4, title: 'Task Todo High', status: 'Todo', priority: 'High',
-      createdAt: '2026-01-04T00:00:00', updatedAt: '2026-01-04T00:00:00'
+      createdAt: '2026-01-04T00:00:00', updatedAt: '2026-01-04T00:00:00',
+      isShared: false, collaboratorCount: 0, userId: 1
     }
   ];
 
@@ -44,13 +50,16 @@ describe('TaskListComponent', () => {
 
   beforeEach(async () => {
     taskServiceSpy = jasmine.createSpyObj('TaskService', ['getTasks', 'deleteTask']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserId']);
     taskServiceSpy.getTasks.and.returnValue(of(emptyPagedResponse));
     taskServiceSpy.deleteTask.and.returnValue(of(void 0));
+    authServiceSpy.getUserId.and.returnValue(1);
 
     await TestBed.configureTestingModule({
       imports: [TaskListComponent, RouterTestingModule],
       providers: [
-        { provide: TaskService, useValue: taskServiceSpy }
+        { provide: TaskService, useValue: taskServiceSpy },
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
 

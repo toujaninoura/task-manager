@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TaskService } from '../../../core/services/task.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Task, TaskStatus, TaskPriority } from '../../../core/models/task.model';
+import { TaskShareModalComponent } from '../task-share-modal/task-share-modal.component';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, SlicePipe, FormsModule],
+  imports: [CommonModule, RouterLink, DatePipe, SlicePipe, FormsModule, TaskShareModalComponent],
   templateUrl: './task-list.component.html'
 })
 export class TaskListComponent implements OnInit {
@@ -24,9 +26,13 @@ export class TaskListComponent implements OnInit {
   filterPriority = '';
   filteredCount = 0;
 
-  constructor(private taskService: TaskService) {}
+  selectedTask: Task | null = null;
+  currentUserId: number | null = null;
+
+  constructor(private taskService: TaskService, private authService: AuthService) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.authService.getUserId();
     this.loadTasks();
   }
 
@@ -76,6 +82,18 @@ export class TaskListComponent implements OnInit {
         next: () => this.loadTasks(),
         error: () => { this.errorMessage = 'Impossible de supprimer cette tâche.'; }
       });
+  }
+
+  openShareModal(task: Task): void {
+    this.selectedTask = task;
+    const el = document.getElementById('shareModal');
+    if (el) {
+      new (window as any).bootstrap.Modal(el).show();
+    }
+  }
+
+  isOwner(task: Task): boolean {
+    return task.userId === this.currentUserId;
   }
 
   trackById(_index: number, task: Task): number {

@@ -10,6 +10,9 @@ export interface Task {
   dueDate?: string;
   createdAt: string;
   updatedAt: string;
+  isShared: boolean;
+  collaboratorCount: number;
+  userId: number;
 }
 
 export interface CreateTaskRequest {
