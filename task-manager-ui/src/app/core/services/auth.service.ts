@@ -52,6 +52,8 @@ export class AuthService {
     if (!token) return null;
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) return null;
       const id = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
       return id ? parseInt(id, 10) : null;
     } catch {

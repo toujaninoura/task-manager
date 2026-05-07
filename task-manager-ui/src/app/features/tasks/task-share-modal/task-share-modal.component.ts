@@ -10,7 +10,8 @@ import { CollaboratorResponse, TaskShareRole } from '../../../core/models/sharin
   selector: 'app-task-share-modal',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './task-share-modal.component.html'
+  templateUrl: './task-share-modal.component.html',
+  styleUrl: './task-share-modal.component.css'
 })
 export class TaskShareModalComponent implements OnChanges {
   private destroyRef = inject(DestroyRef);

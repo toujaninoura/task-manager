@@ -2,7 +2,8 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subject } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 import { TaskSharingService } from '../../../core/services/task-sharing.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { InvitationResponse, TaskShareRole } from '../../../core/models/sharing.model';
@@ -11,10 +12,12 @@ import { InvitationResponse, TaskShareRole } from '../../../core/models/sharing.
   selector: 'app-shared-tasks',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './shared-tasks.component.html'
+  templateUrl: './shared-tasks.component.html',
+  styleUrl: './shared-tasks.component.css'
 })
 export class SharedTasksComponent implements OnInit {
-  private destroyRef = inject(DestroyRef);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly loadTrigger$ = new Subject<void>();
 
   sharedTasks: InvitationResponse[] = [];
   pendingInvitations: InvitationResponse[] = [];
@@ -29,17 +32,19 @@ export class SharedTasksComponent implements OnInit {
 
   ngOnInit(): void {
     this.currentUserId = this.authService.getUserId();
-    this.loadData();
-  }
 
-  loadData(): void {
-    this.isLoading = true;
-    this.errorMessage = '';
-    forkJoin({
-      shared: this.taskSharingService.getSharedTasks(),
-      pending: this.taskSharingService.getPendingInvitations()
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    this.loadTrigger$
+      .pipe(
+        switchMap(() => {
+          this.isLoading = true;
+          this.errorMessage = '';
+          return forkJoin({
+            shared: this.taskSharingService.getSharedTasks(),
+            pending: this.taskSharingService.getPendingInvitations()
+          });
+        }),
+        takeUntilDestroyed(this.destroyRef)
+      )
       .subscribe({
         next: ({ shared, pending }) => {
           this.sharedTasks = shared;
@@ -51,6 +56,12 @@ export class SharedTasksComponent implements OnInit {
           this.isLoading = false;
         }
       });
+
+    this.loadTrigger$.next();
+  }
+
+  loadData(): void {
+    this.loadTrigger$.next();
   }
 
   accept(inv: InvitationResponse): void {
