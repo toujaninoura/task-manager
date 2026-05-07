@@ -17,7 +17,8 @@ public static class DatabaseSeeder
             return;
 
         var now = DateTime.UtcNow;
-        var seedPassword = configuration["SeedData:DefaultPassword"] ?? "SeedDev@2024!";
+        var seedPassword = configuration["SeedData:DefaultPassword"]
+            ?? throw new InvalidOperationException("SeedData:DefaultPassword is not configured. Add it to appsettings.Development.json.");
 
         var demoUser = new User
         {

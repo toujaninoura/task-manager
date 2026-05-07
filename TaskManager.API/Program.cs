@@ -37,9 +37,15 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     await TaskManager.Infrastructure.Data.DatabaseSeeder.SeedAsync(scope.ServiceProvider, app.Configuration);
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogError(ex, "An error occurred while seeding the database.");
 }
 
 app.Run();

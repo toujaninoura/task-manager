@@ -80,11 +80,7 @@ public class TaskService : ITaskService
         var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdTrackingAsync(id, userId, ct)
             ?? throw new NotFoundException(nameof(TaskItem), id);
 
-        taskItem.Title = request.Title;
-        taskItem.Description = request.Description;
-        taskItem.Status = request.Status;
-        taskItem.Priority = request.Priority;
-        taskItem.DueDate = request.DueDate;
+        _mapper.Map(request, taskItem);
         taskItem.UpdatedAt = DateTime.UtcNow;
 
         var updated = await _unitOfWork.Tasks.UpdateAsync(taskItem, ct);
