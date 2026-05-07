@@ -4,10 +4,11 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Task, CreateTaskRequest, UpdateTaskRequest } from '../models/task.model';
 import { ApiResponse, PagedResponse } from '../models/api-response.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class TaskService {
-  private readonly API = 'http://localhost:5000/api/v1/tasks';
+  private readonly API = `${environment.apiUrl}/api/v1/tasks`;
 
   constructor(private http: HttpClient) {}
 
