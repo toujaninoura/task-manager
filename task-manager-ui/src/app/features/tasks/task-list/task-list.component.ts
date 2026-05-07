@@ -12,7 +12,8 @@ import { TaskShareModalComponent } from '../task-share-modal/task-share-modal.co
   selector: 'app-task-list',
   standalone: true,
   imports: [CommonModule, RouterLink, DatePipe, SlicePipe, FormsModule, TaskShareModalComponent],
-  templateUrl: './task-list.component.html'
+  templateUrl: './task-list.component.html',
+  styleUrl: './task-list.component.css'
 })
 export class TaskListComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

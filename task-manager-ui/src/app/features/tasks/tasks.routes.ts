@@ -7,8 +7,8 @@ import { authGuard } from '../../core/guards/auth.guard';
 
 export const TASKS_ROUTES: Routes = [
   { path: '', component: DashboardComponent },
-  { path: 'list', component: TaskListComponent },
-  { path: 'form', component: TaskFormComponent },
-  { path: 'form/:id', component: TaskFormComponent },
+  { path: 'list', component: TaskListComponent, canActivate: [authGuard] },
+  { path: 'form', component: TaskFormComponent, canActivate: [authGuard] },
+  { path: 'form/:id', component: TaskFormComponent, canActivate: [authGuard] },
   { path: 'shared', component: SharedTasksComponent, canActivate: [authGuard] }
 ];

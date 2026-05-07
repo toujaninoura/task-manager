@@ -2,8 +2,8 @@ import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin, Subject } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { EMPTY, forkJoin, Subject } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 import { TaskSharingService } from '../../../core/services/task-sharing.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { InvitationResponse, TaskShareRole } from '../../../core/models/sharing.model';
@@ -41,20 +41,20 @@ export class SharedTasksComponent implements OnInit {
           return forkJoin({
             shared: this.taskSharingService.getSharedTasks(),
             pending: this.taskSharingService.getPendingInvitations()
-          });
+          }).pipe(
+            catchError(() => {
+              this.errorMessage = 'Impossible de charger les tâches partagées.';
+              this.isLoading = false;
+              return EMPTY;
+            })
+          );
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe({
-        next: ({ shared, pending }) => {
-          this.sharedTasks = shared;
-          this.pendingInvitations = pending;
-          this.isLoading = false;
-        },
-        error: () => {
-          this.errorMessage = 'Impossible de charger les tâches partagées.';
-          this.isLoading = false;
-        }
+      .subscribe(({ shared, pending }) => {
+        this.sharedTasks = shared;
+        this.pendingInvitations = pending;
+        this.isLoading = false;
       });
 
     this.loadTrigger$.next();
