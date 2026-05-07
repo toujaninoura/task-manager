@@ -123,7 +123,7 @@ describe('TaskSharingService', () => {
         expect(result).toEqual([mockInvitation]);
       });
 
-      const req = httpMock.expectOne(`${BASE_URL}/invitations/pending`);
+      const req = httpMock.expectOne(`${BASE_URL}/shared/pending`);
       expect(req.request.method).toBe('GET');
       req.flush(mockResponse);
     });
@@ -135,7 +135,7 @@ describe('TaskSharingService', () => {
         expect(result).toBeUndefined();
       });
 
-      const req = httpMock.expectOne(`${BASE_URL}/10/invitations/accept`);
+      const req = httpMock.expectOne(`${BASE_URL}/10/collaborators/accept`);
       expect(req.request.method).toBe('POST');
       req.flush(null);
     });
@@ -147,7 +147,7 @@ describe('TaskSharingService', () => {
         expect(result).toBeUndefined();
       });
 
-      const req = httpMock.expectOne(`${BASE_URL}/10/invitations/reject`);
+      const req = httpMock.expectOne(`${BASE_URL}/10/collaborators/reject`);
       expect(req.request.method).toBe('POST');
       req.flush(null);
     });

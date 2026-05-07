@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TaskService } from './task.service';
+import { environment } from '../../../environments/environment';
 
 describe('TaskService', () => {
   let service: TaskService;
   let httpMock: HttpTestingController;
+
+  const BASE_URL = `${environment.apiUrl}/api/v1/tasks`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -61,7 +64,7 @@ describe('TaskService', () => {
       expect(task.title).toBe('New Task');
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/tasks');
+    const req = httpMock.expectOne(BASE_URL);
     expect(req.request.method).toBe('POST');
     req.flush(mockApiResponse);
   });
@@ -69,7 +72,7 @@ describe('TaskService', () => {
   it('should call deleteTask endpoint with DELETE', () => {
     service.deleteTask(1).subscribe();
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/tasks/1');
+    const req = httpMock.expectOne(`${BASE_URL}/1`);
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
   });

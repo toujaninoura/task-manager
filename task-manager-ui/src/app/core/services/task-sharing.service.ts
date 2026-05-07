@@ -42,19 +42,19 @@ export class TaskSharingService {
 
   getPendingInvitations(): Observable<InvitationResponse[]> {
     return this.http
-      .get<ApiResponse<InvitationResponse[]>>(`${this.API}/invitations/pending`)
+      .get<ApiResponse<InvitationResponse[]>>(`${this.API}/shared/pending`)
       .pipe(map(r => r.data));
   }
 
   acceptInvitation(taskId: number): Observable<void> {
     return this.http
-      .post<void>(`${this.API}/${taskId}/invitations/accept`, {})
+      .post<void>(`${this.API}/${taskId}/collaborators/accept`, {})
       .pipe(map(() => void 0));
   }
 
   rejectInvitation(taskId: number): Observable<void> {
     return this.http
-      .post<void>(`${this.API}/${taskId}/invitations/reject`, {})
+      .post<void>(`${this.API}/${taskId}/collaborators/reject`, {})
       .pipe(map(() => void 0));
   }
 }
