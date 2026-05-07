@@ -13,12 +13,14 @@ public class TaskCollaboratorConfiguration : IEntityTypeConfiguration<TaskCollab
         builder.HasKey(tc => tc.Id);
 
         builder.Property(tc => tc.Role)
-            .IsRequired()
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
 
         builder.Property(tc => tc.Status)
-            .IsRequired()
-            .HasConversion<string>();
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
 
         builder.Property(tc => tc.InvitedAt)
             .IsRequired()

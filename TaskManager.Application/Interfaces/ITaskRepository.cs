@@ -12,5 +12,5 @@ public interface ITaskRepository
     Task<TaskItem?> GetByIdAndUserIdTrackingAsync(int id, int userId, CancellationToken ct = default);
     Task<TaskItem> CreateAsync(TaskItem task, CancellationToken ct = default);
     Task<TaskItem> UpdateAsync(TaskItem task, CancellationToken ct = default);
-    Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default);
+    Task SoftDeleteAsync(TaskItem task, CancellationToken ct = default);
 }

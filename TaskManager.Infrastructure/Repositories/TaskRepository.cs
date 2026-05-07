@@ -56,15 +56,10 @@ public class TaskRepository : ITaskRepository
         return Task.FromResult(task);
     }
 
-    public async Task SoftDeleteAsync(int id, int userId, CancellationToken ct = default)
+    public Task SoftDeleteAsync(TaskItem task, CancellationToken ct = default)
     {
-        var task = await _context.Tasks
-            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId, ct);
-
-        if (task is null)
-            return;
-
         task.IsDeleted = true;
         task.DeletedAt = DateTime.UtcNow;
+        return Task.CompletedTask;
     }
 }

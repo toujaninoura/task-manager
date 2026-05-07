@@ -346,22 +346,22 @@ public class TaskServiceTests
             UpdatedAt = DateTime.UtcNow
         };
 
-        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(taskId, userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(taskItem);
-        _taskRepositoryMock.Setup(r => r.SoftDeleteAsync(taskId, userId, It.IsAny<CancellationToken>()))
+        _taskRepositoryMock.Setup(r => r.SoftDeleteAsync(taskItem, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         await _sut.DeleteAsync(taskId, userId);
 
-        _taskRepositoryMock.Verify(r => r.SoftDeleteAsync(taskId, userId, It.IsAny<CancellationToken>()), Times.Once);
+        _taskRepositoryMock.Verify(r => r.SoftDeleteAsync(taskItem, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task DeleteAsync_WhenTaskNotFound_ThrowsNotFoundException()
     {
-        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(99, 1, It.IsAny<CancellationToken>()))
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdTrackingAsync(99, 1, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskItem?)null);
 
         Func<Task> act = async () => await _sut.DeleteAsync(99, 1);

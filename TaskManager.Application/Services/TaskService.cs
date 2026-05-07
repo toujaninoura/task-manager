@@ -97,11 +97,10 @@ public class TaskService : ITaskService
 
     public async Task DeleteAsync(int id, int userId, CancellationToken ct = default)
     {
-        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdAsync(id, userId, ct);
-        if (taskItem is null)
-            throw new NotFoundException(nameof(TaskItem), id);
+        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdTrackingAsync(id, userId, ct)
+            ?? throw new NotFoundException(nameof(TaskItem), id);
 
-        await _unitOfWork.Tasks.SoftDeleteAsync(id, userId, ct);
+        await _unitOfWork.Tasks.SoftDeleteAsync(taskItem, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation("Task {TaskId} soft-deleted for user {UserId}", id, userId);
