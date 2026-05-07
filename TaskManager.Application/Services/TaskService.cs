@@ -5,6 +5,7 @@ using TaskManager.Application.Common;
 using TaskManager.Application.DTOs;
 using TaskManager.Application.Interfaces;
 using TaskManager.Domain.Entities;
+using TaskManager.Domain.Enums;
 using TaskManager.Domain.Exceptions;
 using ValidationException = TaskManager.Domain.Exceptions.ValidationException;
 
@@ -46,10 +47,17 @@ public class TaskService : ITaskService
     public async Task<TaskItemResponse> GetByIdAsync(int id, int userId, CancellationToken ct = default)
     {
         var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdAsync(id, userId, ct);
-        if (taskItem is null)
+        if (taskItem is not null)
+            return _mapper.Map<TaskItemResponse>(taskItem);
+
+        var isCollaborator = await _unitOfWork.Collaborators.IsAcceptedCollaboratorAsync(id, userId, ct);
+        if (!isCollaborator)
             throw new NotFoundException(nameof(TaskItem), id);
 
-        return _mapper.Map<TaskItemResponse>(taskItem);
+        var sharedTask = await _unitOfWork.Tasks.GetByIdAsync(id, ct)
+            ?? throw new NotFoundException(nameof(TaskItem), id);
+
+        return _mapper.Map<TaskItemResponse>(sharedTask);
     }
 
     public async Task<TaskItemResponse> CreateAsync(CreateTaskItemRequest request, int userId, CancellationToken ct = default)
@@ -77,8 +85,17 @@ public class TaskService : ITaskService
         if (!validation.IsValid)
             throw new ValidationException(validation.Errors.Select(e => e.ErrorMessage));
 
-        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdTrackingAsync(id, userId, ct)
-            ?? throw new NotFoundException(nameof(TaskItem), id);
+        var taskItem = await _unitOfWork.Tasks.GetByIdAndUserIdTrackingAsync(id, userId, ct);
+
+        if (taskItem is null)
+        {
+            var role = await _unitOfWork.Collaborators.GetUserRoleAsync(id, userId, ct);
+            if (role != TaskShareRole.Editor)
+                throw new UnauthorizedException("Only the owner or editors can update this task.");
+
+            taskItem = await _unitOfWork.Tasks.GetByIdTrackingAsync(id, ct)
+                ?? throw new NotFoundException(nameof(TaskItem), id);
+        }
 
         taskItem.Title = request.Title;
         taskItem.Description = request.Description;

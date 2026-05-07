@@ -8,11 +8,13 @@ public class UnitOfWork : IUnitOfWork
     private readonly AppDbContext _context;
 
     public ITaskRepository Tasks { get; }
+    public ITaskCollaboratorRepository Collaborators { get; }
 
-    public UnitOfWork(AppDbContext context, ITaskRepository taskRepository)
+    public UnitOfWork(AppDbContext context, ITaskRepository taskRepository, ITaskCollaboratorRepository collaboratorRepository)
     {
         _context = context;
         Tasks = taskRepository;
+        Collaborators = collaboratorRepository;
     }
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
