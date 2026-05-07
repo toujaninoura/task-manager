@@ -1,7 +1,10 @@
 <div class="container py-4">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Mes tâches</h2>
-    <a routerLink="../form" class="btn btn-primary">+ Nouvelle tâche</a>
+    <div class="d-flex gap-2">
+      <a routerLink="../shared" class="btn btn-outline-secondary">Partagées avec moi</a>
+      <a routerLink="../form" class="btn btn-primary">+ Nouvelle tâche</a>
+    </div>
   </div>
 
   <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
@@ -75,7 +78,14 @@
       </thead>
       <tbody>
         <tr *ngFor="let task of tasks; trackBy: trackById">
-          <td>{{ task.title }}</td>
+          <td>
+            {{ task.title }}
+            <span *ngIf="task.isShared"
+                  class="badge bg-info text-dark ms-2"
+                  [title]="task.collaboratorCount + ' collaborateur(s)'">
+              Partagé
+            </span>
+          </td>
           <td>
             {{ task.description
               ? (task.description | slice:0:50) + (task.description.length > 50 ? '...' : '')
@@ -89,6 +99,7 @@
           </td>
           <td>{{ task.dueDate ? (task.dueDate | date:'dd/MM/yyyy') : '-' }}</td>
           <td>
+            <button *ngIf="isOwner(task)" class="btn btn-sm btn-outline-info me-1" (click)="openShareModal(task)">Partager</button>
             <a [routerLink]="['../form', task.id]" class="btn btn-sm btn-outline-primary me-1">Modifier</a>
             <button class="btn btn-sm btn-outline-danger" (click)="deleteTask(task.id)">Supprimer</button>
           </td>
@@ -97,3 +108,10 @@
     </table>
   </div>
 </div>
+
+<app-task-share-modal
+  *ngIf="showShareModal"
+  [task]="selectedTask"
+  (collaboratorChanged)="loadTasks()"
+  (modalClosed)="closeShareModal()">
+</app-task-share-modal>

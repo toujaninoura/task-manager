@@ -19,7 +19,10 @@ describe('TaskFormComponent', () => {
     priority: 'Medium',
     dueDate: '2026-12-31T00:00:00',
     createdAt: '2026-01-01T00:00:00',
-    updatedAt: '2026-01-01T00:00:00'
+    updatedAt: '2026-01-01T00:00:00',
+    isShared: false,
+    collaboratorCount: 0,
+    userId: 1
   };
 
   function createComponent(routeParams: { id?: string } = {}): void {

@@ -4,13 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TaskService } from '../../../core/services/task.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Task, TaskStatus, TaskPriority } from '../../../core/models/task.model';
+import { TaskShareModalComponent } from '../task-share-modal/task-share-modal.component';
 
 @Component({
   selector: 'app-task-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, DatePipe, SlicePipe, FormsModule],
-  templateUrl: './task-list.component.html'
+  imports: [CommonModule, RouterLink, DatePipe, SlicePipe, FormsModule, TaskShareModalComponent],
+  templateUrl: './task-list.component.html',
+  styleUrl: './task-list.component.css'
 })
 export class TaskListComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
@@ -24,9 +27,14 @@ export class TaskListComponent implements OnInit {
   filterPriority = '';
   filteredCount = 0;
 
-  constructor(private taskService: TaskService) {}
+  selectedTask: Task | null = null;
+  showShareModal = false;
+  currentUserId: number | null = null;
+
+  constructor(private taskService: TaskService, private authService: AuthService) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.authService.getUserId();
     this.loadTasks();
   }
 
@@ -76,6 +84,19 @@ export class TaskListComponent implements OnInit {
         next: () => this.loadTasks(),
         error: () => { this.errorMessage = 'Impossible de supprimer cette tâche.'; }
       });
+  }
+
+  openShareModal(task: Task): void {
+    this.selectedTask = task;
+    this.showShareModal = true;
+  }
+
+  closeShareModal(): void {
+    this.showShareModal = false;
+  }
+
+  isOwner(task: Task): boolean {
+    return task.userId === this.currentUserId;
   }
 
   trackById(_index: number, task: Task): number {

@@ -4,11 +4,12 @@ import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { AuthRequest, AuthResponse } from '../models/user.model';
 import { ApiResponse } from '../models/api-response.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly TOKEN_KEY = 'auth_token';
-  private readonly API = 'http://localhost:5000/api/v1/auth';
+  private readonly API = `${environment.apiUrl}/api/v1/auth`;
 
   constructor(private http: HttpClient) {}
 
@@ -44,5 +45,19 @@ export class AuthService {
 
   setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
+  }
+
+  getUserId(): number | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) return null;
+      const id = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+      return id ? parseInt(id, 10) : null;
+    } catch {
+      return null;
+    }
   }
 }

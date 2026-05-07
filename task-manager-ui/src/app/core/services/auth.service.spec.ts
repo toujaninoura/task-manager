@@ -55,7 +55,7 @@ describe('AuthService', () => {
       expect(localStorage.getItem('auth_token')).toBe('mock-jwt-token');
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/auth/login');
+    const req = httpMock.expectOne('https://localhost:7063/api/v1/auth/login');
     expect(req.request.method).toBe('POST');
     req.flush(mockApiResponse);
   });
@@ -74,12 +74,21 @@ describe('AuthService', () => {
       expect(localStorage.getItem('auth_token')).toBe('mock-jwt-token');
     });
 
-    const req = httpMock.expectOne('http://localhost:5000/api/v1/auth/register');
+    const req = httpMock.expectOne('https://localhost:7063/api/v1/auth/register');
     expect(req.request.method).toBe('POST');
     req.flush(mockApiResponse);
   });
 
   it('should return null when no token stored', () => {
     expect(service.getToken()).toBeNull();
+  });
+
+  it('should return null from getUserId when no token', () => {
+    expect(service.getUserId()).toBeNull();
+  });
+
+  it('should return null from getUserId when token is malformed', () => {
+    service.setToken('not-a-valid-jwt');
+    expect(service.getUserId()).toBeNull();
   });
 });

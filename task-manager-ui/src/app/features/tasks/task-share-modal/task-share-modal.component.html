@@ -1,0 +1,48 @@
+<div class="modal-overlay" (click)="close()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Partager "{{ task?.title }}"</h5>
+        <button type="button" class="btn-close" aria-label="Fermer" (click)="close()"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Formulaire d'invitation -->
+        <form [formGroup]="inviteForm" (ngSubmit)="invite()">
+          <div class="mb-3">
+            <label class="form-label">Email du collaborateur</label>
+            <input type="email" class="form-control" formControlName="email"
+              [class.is-invalid]="inviteForm.get('email')?.invalid && inviteForm.get('email')?.touched">
+            <div class="invalid-feedback">Email valide requis</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rôle</label>
+            <select class="form-select" formControlName="role">
+              <option value="Editor">Editor — peut modifier</option>
+              <option value="Viewer">Viewer — lecture seule</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="inviteForm.invalid || isLoading">
+            Inviter
+          </button>
+        </form>
+
+        <hr>
+
+        <h6>Collaborateurs actuels</h6>
+        <div *ngIf="collaborators.length === 0" class="text-muted small">Aucun collaborateur</div>
+        <ul class="list-group list-group-flush">
+          <li *ngFor="let c of collaborators" class="list-group-item d-flex justify-content-between align-items-center">
+            <span>
+              {{ c.email }}
+              <span class="badge ms-2" [ngClass]="getRoleBadgeClass(c.role)">{{ c.role }}</span>
+              <span *ngIf="c.status === 'Pending'" class="badge bg-warning ms-1">En attente</span>
+            </span>
+            <button class="btn btn-sm btn-outline-danger" (click)="remove(c)">Retirer</button>
+          </li>
+        </ul>
+
+        <div *ngIf="errorMessage" class="alert alert-danger mt-3">{{ errorMessage }}</div>
+      </div>
+    </div>
+  </div>
+</div>
