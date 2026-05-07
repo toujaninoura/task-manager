@@ -35,6 +35,11 @@ public class TaskSharingService : ITaskSharingService
     public async Task<CollaboratorResponse> InviteCollaboratorAsync(
         int taskId, InviteCollaboratorRequest request, int ownerUserId, CancellationToken ct = default)
     {
+        // Fail-fast: validate before any database calls
+        var validation = await _inviteValidator.ValidateAsync(request, ct);
+        if (!validation.IsValid)
+            throw new ValidationException(validation.Errors.Select(e => e.ErrorMessage));
+
         var task = await _unitOfWork.Tasks.GetByIdAndUserIdAsync(taskId, ownerUserId, ct)
             ?? throw new NotFoundException(nameof(TaskItem), taskId);
 
@@ -47,10 +52,6 @@ public class TaskSharingService : ITaskSharingService
         var existing = await _unitOfWork.Collaborators.GetByTaskAndUserAsync(taskId, invitedUser.Id, ct);
         if (existing is not null)
             throw new ConflictException("User is already a collaborator on this task.");
-
-        var validation = await _inviteValidator.ValidateAsync(request, ct);
-        if (!validation.IsValid)
-            throw new ValidationException(validation.Errors.Select(e => e.ErrorMessage));
 
         var collaborator = new TaskCollaborator
         {
@@ -73,7 +74,7 @@ public class TaskSharingService : ITaskSharingService
 
     public async Task AcceptInvitationAsync(int taskId, int userId, CancellationToken ct = default)
     {
-        var collab = await _unitOfWork.Collaborators.GetByTaskAndUserAsync(taskId, userId, ct)
+        var collab = await _unitOfWork.Collaborators.GetByTaskAndUserTrackingAsync(taskId, userId, ct)
             ?? throw new NotFoundException("Invitation", taskId);
 
         if (collab.Status != InvitationStatus.Pending)
@@ -82,7 +83,6 @@ public class TaskSharingService : ITaskSharingService
         collab.Status = InvitationStatus.Accepted;
         collab.RespondedAt = DateTime.UtcNow;
 
-        await _unitOfWork.Collaborators.UpdateAsync(collab, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation("User {UserId} accepted invitation for task {TaskId}", userId, taskId);
@@ -90,7 +90,7 @@ public class TaskSharingService : ITaskSharingService
 
     public async Task RejectInvitationAsync(int taskId, int userId, CancellationToken ct = default)
     {
-        var collab = await _unitOfWork.Collaborators.GetByTaskAndUserAsync(taskId, userId, ct)
+        var collab = await _unitOfWork.Collaborators.GetByTaskAndUserTrackingAsync(taskId, userId, ct)
             ?? throw new NotFoundException("Invitation", taskId);
 
         if (collab.Status != InvitationStatus.Pending)
@@ -99,7 +99,6 @@ public class TaskSharingService : ITaskSharingService
         collab.Status = InvitationStatus.Rejected;
         collab.RespondedAt = DateTime.UtcNow;
 
-        await _unitOfWork.Collaborators.UpdateAsync(collab, ct);
         await _unitOfWork.SaveChangesAsync(ct);
 
         _logger.LogInformation("User {UserId} rejected invitation for task {TaskId}", userId, taskId);

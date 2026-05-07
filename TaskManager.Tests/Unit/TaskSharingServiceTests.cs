@@ -43,6 +43,11 @@ public class TaskSharingServiceTests
 
         _unitOfWorkMock.Setup(u => u.Tasks).Returns(_taskRepositoryMock.Object);
         _unitOfWorkMock.Setup(u => u.Collaborators).Returns(_collaboratorRepositoryMock.Object);
+        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
+
+        // Default: validation succeeds
+        _validatorMock.Setup(v => v.ValidateAsync(It.IsAny<InviteCollaboratorRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ValidationResult());
 
         var config = new MapperConfiguration(cfg =>
         {
@@ -112,11 +117,8 @@ public class TaskSharingServiceTests
             .ReturnsAsync(guestUser);
         _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskCollaborator?)null);
-        _validatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ValidationResult());
         _collaboratorRepositoryMock.Setup(r => r.CreateAsync(It.IsAny<TaskCollaborator>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(created);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         var result = await _sut.InviteCollaboratorAsync(TaskId, request, OwnerId);
 
@@ -197,19 +199,11 @@ public class TaskSharingServiceTests
     public async Task InviteCollaboratorAsync_WhenRoleIsOwner_ShouldThrowValidationException()
     {
         var request = new InviteCollaboratorRequest("guest@test.com", TaskShareRole.Owner);
-        var ownerTask = BuildTask();
-        var guestUser = BuildUser(GuestId, "guest@test.com");
         var failures = new List<ValidationFailure>
         {
             new("Role", "Role must be Editor or Viewer. Owner cannot be assigned.")
         };
 
-        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(TaskId, OwnerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(ownerTask);
-        _userRepositoryMock.Setup(r => r.GetByEmailAsync("guest@test.com"))
-            .ReturnsAsync(guestUser);
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((TaskCollaborator?)null);
         _validatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult(failures));
 
@@ -225,24 +219,20 @@ public class TaskSharingServiceTests
     {
         var collab = BuildCollaborator(status: InvitationStatus.Pending);
 
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(collab);
-        _collaboratorRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<TaskCollaborator>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         await _sut.AcceptInvitationAsync(TaskId, GuestId);
 
         collab.Status.Should().Be(InvitationStatus.Accepted);
         collab.RespondedAt.Should().NotBeNull();
-        _collaboratorRepositoryMock.Verify(r => r.UpdateAsync(collab, It.IsAny<CancellationToken>()), Times.Once);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Test]
     public async Task AcceptInvitationAsync_WhenInvitationNotFound_ShouldThrowNotFoundException()
     {
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskCollaborator?)null);
 
         Func<Task> act = async () => await _sut.AcceptInvitationAsync(TaskId, GuestId);
@@ -251,11 +241,9 @@ public class TaskSharingServiceTests
     }
 
     [Test]
-    public async Task AcceptInvitationAsync_WhenWrongUser_ShouldThrowUnauthorizedException()
+    public async Task AcceptInvitationAsync_WhenWrongUser_ShouldThrowNotFoundException()
     {
-        var collab = BuildCollaborator(userId: GuestId);
-
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, 999, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, 999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskCollaborator?)null);
 
         Func<Task> act = async () => await _sut.AcceptInvitationAsync(TaskId, 999);
@@ -268,7 +256,7 @@ public class TaskSharingServiceTests
     {
         var collab = BuildCollaborator(status: InvitationStatus.Accepted);
 
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(collab);
 
         Func<Task> act = async () => await _sut.AcceptInvitationAsync(TaskId, GuestId);
@@ -283,11 +271,8 @@ public class TaskSharingServiceTests
     {
         var collab = BuildCollaborator(status: InvitationStatus.Pending);
 
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(collab);
-        _collaboratorRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<TaskCollaborator>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         await _sut.RejectInvitationAsync(TaskId, GuestId);
 
@@ -299,7 +284,7 @@ public class TaskSharingServiceTests
     [Test]
     public async Task RejectInvitationAsync_WhenInvitationNotFound_ShouldThrowNotFoundException()
     {
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskCollaborator?)null);
 
         Func<Task> act = async () => await _sut.RejectInvitationAsync(TaskId, GuestId);
@@ -308,9 +293,9 @@ public class TaskSharingServiceTests
     }
 
     [Test]
-    public async Task RejectInvitationAsync_WhenWrongUser_ShouldThrowUnauthorizedException()
+    public async Task RejectInvitationAsync_WhenWrongUser_ShouldThrowNotFoundException()
     {
-        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserAsync(TaskId, 999, It.IsAny<CancellationToken>()))
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskAndUserTrackingAsync(TaskId, 999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((TaskCollaborator?)null);
 
         Func<Task> act = async () => await _sut.RejectInvitationAsync(TaskId, 999);
@@ -332,7 +317,6 @@ public class TaskSharingServiceTests
             .ReturnsAsync(ownerTask);
         _collaboratorRepositoryMock.Setup(r => r.DeleteAsync(collab, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         await _sut.RemoveCollaboratorAsync(TaskId, GuestId, OwnerId);
 
@@ -351,7 +335,6 @@ public class TaskSharingServiceTests
             .ReturnsAsync((TaskItem?)null);
         _collaboratorRepositoryMock.Setup(r => r.DeleteAsync(collab, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        _unitOfWorkMock.Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
         await _sut.RemoveCollaboratorAsync(TaskId, GuestId, GuestId);
 
@@ -391,5 +374,73 @@ public class TaskSharingServiceTests
 
         result.Should().HaveCount(1);
         result.First().UserId.Should().Be(GuestId);
+    }
+
+    [Test]
+    public async Task GetCollaboratorsAsync_WhenAcceptedCollaborator_ShouldReturnList()
+    {
+        var collabs = new List<TaskCollaborator> { BuildCollaborator(status: InvitationStatus.Accepted) };
+
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskItem?)null);
+        _collaboratorRepositoryMock.Setup(r => r.IsAcceptedCollaboratorAsync(TaskId, GuestId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _collaboratorRepositoryMock.Setup(r => r.GetByTaskIdAsync(TaskId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(collabs);
+
+        var result = await _sut.GetCollaboratorsAsync(TaskId, GuestId);
+
+        result.Should().HaveCount(1);
+    }
+
+    [Test]
+    public async Task GetCollaboratorsAsync_WhenNonCollaborator_ShouldThrowUnauthorizedException()
+    {
+        _taskRepositoryMock.Setup(r => r.GetByIdAndUserIdAsync(TaskId, 999, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((TaskItem?)null);
+        _collaboratorRepositoryMock.Setup(r => r.IsAcceptedCollaboratorAsync(TaskId, 999, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
+
+        Func<Task> act = async () => await _sut.GetCollaboratorsAsync(TaskId, 999);
+
+        await act.Should().ThrowAsync<UnauthorizedException>();
+    }
+
+    // ================== GetSharedTasksAsync ==================
+
+    [Test]
+    public async Task GetSharedTasksAsync_ShouldReturnAcceptedSharedTasks()
+    {
+        var collabs = new List<TaskCollaborator>
+        {
+            BuildCollaborator(status: InvitationStatus.Accepted)
+        };
+
+        _collaboratorRepositoryMock.Setup(r => r.GetSharedWithUserAsync(GuestId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(collabs);
+
+        var result = await _sut.GetSharedTasksAsync(GuestId);
+
+        result.Should().HaveCount(1);
+        result.First().TaskId.Should().Be(TaskId);
+    }
+
+    // ================== GetPendingInvitationsAsync ==================
+
+    [Test]
+    public async Task GetPendingInvitationsAsync_ShouldReturnPendingInvitations()
+    {
+        var collabs = new List<TaskCollaborator>
+        {
+            BuildCollaborator(status: InvitationStatus.Pending)
+        };
+
+        _collaboratorRepositoryMock.Setup(r => r.GetPendingForUserAsync(GuestId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(collabs);
+
+        var result = await _sut.GetPendingInvitationsAsync(GuestId);
+
+        result.Should().HaveCount(1);
+        result.First().TaskId.Should().Be(TaskId);
     }
 }

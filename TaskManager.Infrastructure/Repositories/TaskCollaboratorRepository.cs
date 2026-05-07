@@ -22,6 +22,12 @@ public class TaskCollaboratorRepository : ITaskCollaboratorRepository
             .FirstOrDefaultAsync(tc => tc.TaskId == taskId && tc.UserId == userId, ct);
     }
 
+    public async Task<TaskCollaborator?> GetByTaskAndUserTrackingAsync(int taskId, int userId, CancellationToken ct = default)
+    {
+        return await _context.TaskCollaborators
+            .FirstOrDefaultAsync(tc => tc.TaskId == taskId && tc.UserId == userId, ct);
+    }
+
     public async Task<IEnumerable<TaskCollaborator>> GetByTaskIdAsync(int taskId, CancellationToken ct = default)
     {
         return await _context.TaskCollaborators
