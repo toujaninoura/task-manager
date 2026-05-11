@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
+import { provideLocationMocks } from '@angular/common/testing';
 import { of, throwError } from 'rxjs';
 import { LoginComponent } from './login.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +12,7 @@ describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
   let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let router: Router;
 
   const mockAuthResponse: AuthResponse = {
     token: 'mock-token',
@@ -20,19 +22,21 @@ describe('LoginComponent', () => {
   };
 
   beforeEach(async () => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['login', 'register']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['login']);
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, ReactiveFormsModule],
       providers: [
-        { provide: AuthService, useValue: authServiceSpy },
-        { provide: Router, useValue: routerSpy }
+        provideRouter([]),
+        provideLocationMocks(),
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
     fixture.detectChanges();
   });
 
@@ -45,8 +49,7 @@ describe('LoginComponent', () => {
   });
 
   it('should have email control invalid when empty', () => {
-    const emailControl = component.form.get('email');
-    expect(emailControl?.invalid).toBeTrue();
+    expect(component.form.get('email')?.invalid).toBeTrue();
   });
 
   it('should have password control invalid when too short', () => {
@@ -54,27 +57,19 @@ describe('LoginComponent', () => {
     expect(component.form.get('password')?.invalid).toBeTrue();
   });
 
-  it('should start in login mode', () => {
-    expect(component.isLoginMode).toBeTrue();
-  });
-
-  it('should toggle to register mode', () => {
-    component.toggle();
-    expect(component.isLoginMode).toBeFalse();
-  });
-
-  it('should call login service on submit in login mode', () => {
+  it('should call login service on submit', () => {
     authServiceSpy.login.and.returnValue(of(mockAuthResponse));
     component.form.setValue({ email: 'test@test.com', password: 'password123' });
     component.onSubmit();
     expect(authServiceSpy.login).toHaveBeenCalled();
   });
 
-  it('should redirect to /tasks after successful login', () => {
+  it('should redirect to /tasks and reset isLoading after successful login', () => {
     authServiceSpy.login.and.returnValue(of(mockAuthResponse));
     component.form.setValue({ email: 'test@test.com', password: 'password123' });
     component.onSubmit();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/tasks']);
+    expect(router.navigate).toHaveBeenCalledWith(['/tasks']);
+    expect(component.isLoading).toBeFalse();
   });
 
   it('should set errorMessage on login failure', () => {
@@ -84,19 +79,19 @@ describe('LoginComponent', () => {
     component.form.setValue({ email: 'test@test.com', password: 'password123' });
     component.onSubmit();
     expect(component.errorMessage).toBe('Identifiants incorrects');
-  });
-
-  it('should call register service on submit in register mode', () => {
-    authServiceSpy.register.and.returnValue(of(mockAuthResponse));
-    component.toggle();
-    component.form.setValue({ email: 'new@test.com', password: 'password123' });
-    component.onSubmit();
-    expect(authServiceSpy.register).toHaveBeenCalled();
+    expect(component.isLoading).toBeFalse();
   });
 
   it('should not submit if form is invalid', () => {
     component.onSubmit();
     expect(authServiceSpy.login).not.toHaveBeenCalled();
-    expect(authServiceSpy.register).not.toHaveBeenCalled();
+  });
+
+  it('should not submit if isLoading is true', () => {
+    authServiceSpy.login.and.returnValue(of(mockAuthResponse));
+    component.form.setValue({ email: 'test@test.com', password: 'password123' });
+    component.isLoading = true;
+    component.onSubmit();
+    expect(authServiceSpy.login).not.toHaveBeenCalled();
   });
 });

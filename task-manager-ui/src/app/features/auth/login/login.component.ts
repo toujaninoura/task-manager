@@ -2,20 +2,20 @@ import { Component, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
 export class LoginComponent {
   private destroyRef = inject(DestroyRef);
-  isLoginMode = true;
+  isLoading = false;
   errorMessage = '';
   form: FormGroup;
 
@@ -30,21 +30,18 @@ export class LoginComponent {
     });
   }
 
-  toggle(): void {
-    this.isLoginMode = !this.isLoginMode;
-    this.errorMessage = '';
-    this.form.reset();
-  }
-
   onSubmit(): void {
-    if (this.form.invalid) return;
-    const request = this.form.value;
-    const obs$ = this.isLoginMode
-      ? this.authService.login(request)
-      : this.authService.register(request);
-    obs$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: () => this.router.navigate(['/tasks']),
-      error: (err: HttpErrorResponse) => { this.errorMessage = err.error?.message || 'Une erreur est survenue'; }
-    });
+    if (this.form.invalid || this.isLoading) return;
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.authService.login(this.form.value)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: () => { this.isLoading = false; this.router.navigate(['/tasks']); },
+        error: (err: HttpErrorResponse) => {
+          this.isLoading = false;
+          this.errorMessage = err.error?.message || 'Une erreur est survenue';
+        }
+      });
   }
 }
