@@ -125,6 +125,43 @@ describe('RegisterComponent', () => {
     expect(authServiceSpy.register).not.toHaveBeenCalled();
   });
 
+  // ================== Password Strength ==================
+
+  it('should return score 0 for empty password', () => {
+    component.form.get('password')?.setValue('');
+    expect(component.passwordStrengthScore).toBe(0);
+  });
+
+  it('should return score 1 for password with only length', () => {
+    component.form.get('password')?.setValue('abcdefgh');
+    expect(component.passwordStrengthScore).toBe(2); // length + lowercase
+  });
+
+  it('should return max score 5 for strong password', () => {
+    component.form.get('password')?.setValue('Abc1defg!');
+    expect(component.passwordStrengthScore).toBe(5);
+  });
+
+  it('should return bg-danger for weak password (score <= 1)', () => {
+    component.form.get('password')?.setValue('a');
+    expect(component.passwordStrengthClass).toBe('bg-danger');
+  });
+
+  it('should return bg-warning for medium password (score 2-3)', () => {
+    component.form.get('password')?.setValue('abcdefgh');
+    expect(component.passwordStrengthClass).toBe('bg-warning');
+  });
+
+  it('should return bg-success for strong password (score >= 4)', () => {
+    component.form.get('password')?.setValue('Abcdefg1!');
+    expect(component.passwordStrengthClass).toBe('bg-success');
+  });
+
+  it('should return correct width percentage for score 5', () => {
+    component.form.get('password')?.setValue('Abc1defg!');
+    expect(component.passwordStrengthWidth).toBe('100%');
+  });
+
   it('should not submit when isLoading is true', () => {
     authServiceSpy.register.and.returnValue(of(mockAuthResponse));
     component.form.setValue(validForm);
