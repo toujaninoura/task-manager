@@ -55,6 +55,16 @@
             <span *ngIf="field('password')?.hasError('required')">Le mot de passe est requis.</span>
             <span *ngIf="field('password')?.hasError('minlength')">Minimum 8 caractères.</span>
           </div>
+          <div *ngIf="field('password')?.value" class="mt-2">
+            <div class="progress password-strength-bar">
+              <div
+                class="progress-bar"
+                role="progressbar"
+                [ngClass]="passwordStrengthClass"
+                [style.width]="passwordStrengthWidth">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="mb-4">

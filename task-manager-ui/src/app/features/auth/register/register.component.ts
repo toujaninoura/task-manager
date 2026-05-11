@@ -5,6 +5,7 @@ import { AbstractControl, ReactiveFormsModule, FormBuilder, FormGroup, Validator
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
+import { PasswordStrengthService } from '../../../core/services/password-strength.service';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -28,7 +29,8 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private passwordStrengthService: PasswordStrengthService
   ) {
     this.form = this.fb.group(
       {
@@ -53,6 +55,18 @@ export class RegisterComponent {
 
   get passwordMismatch(): boolean {
     return !!(this.form.hasError('passwordMismatch') && this.field('confirmPassword')?.touched);
+  }
+
+  get passwordStrengthScore(): number {
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').score;
+  }
+
+  get passwordStrengthClass(): string {
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').cssClass;
+  }
+
+  get passwordStrengthWidth(): string {
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').widthPercent;
   }
 
   onSubmit(): void {
