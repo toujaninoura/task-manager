@@ -69,7 +69,7 @@ describe('AuthService', () => {
     };
     const mockApiResponse = { success: true, data: mockAuthResponse };
 
-    service.register({ email: 'new@test.com', password: 'Password123!' }).subscribe(response => {
+    service.register({ firstName: 'Jane', lastName: 'Doe', email: 'new@test.com', password: 'Password123!' }).subscribe(response => {
       expect(response.token).toBe('mock-jwt-token');
       expect(localStorage.getItem('auth_token')).toBe('mock-jwt-token');
     });

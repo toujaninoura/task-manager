@@ -1,0 +1,90 @@
+<div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
+  <div class="card shadow register-card">
+    <div class="card-body p-4">
+      <h4 class="card-title text-center mb-4">Inscription</h4>
+
+      <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Prénom</label>
+            <input
+              type="text"
+              class="form-control"
+              [class.is-invalid]="isInvalid('firstName')"
+              [class.is-valid]="field('firstName')?.valid && field('firstName')?.touched"
+              formControlName="firstName">
+            <div class="invalid-feedback">Le prénom est requis.</div>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label">Nom</label>
+            <input
+              type="text"
+              class="form-control"
+              [class.is-invalid]="isInvalid('lastName')"
+              [class.is-valid]="field('lastName')?.valid && field('lastName')?.touched"
+              formControlName="lastName">
+            <div class="invalid-feedback">Le nom est requis.</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            [class.is-invalid]="isInvalid('email')"
+            [class.is-valid]="field('email')?.valid && field('email')?.touched"
+            formControlName="email">
+          <div class="invalid-feedback">
+            <span *ngIf="field('email')?.hasError('required')">L'email est requis.</span>
+            <span *ngIf="field('email')?.hasError('email')">Format d'email invalide.</span>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Mot de passe</label>
+          <input
+            type="password"
+            class="form-control"
+            [class.is-invalid]="isInvalid('password')"
+            [class.is-valid]="field('password')?.valid && field('password')?.touched"
+            formControlName="password">
+          <div class="invalid-feedback">
+            <span *ngIf="field('password')?.hasError('required')">Le mot de passe est requis.</span>
+            <span *ngIf="field('password')?.hasError('minlength')">Minimum 8 caractères.</span>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">Confirmer le mot de passe</label>
+          <input
+            type="password"
+            class="form-control"
+            [class.is-invalid]="isInvalid('confirmPassword') || passwordMismatch"
+            [class.is-valid]="field('confirmPassword')?.touched && !isInvalid('confirmPassword') && !passwordMismatch"
+            formControlName="confirmPassword">
+          <div class="invalid-feedback">
+            <span *ngIf="field('confirmPassword')?.hasError('required')">La confirmation est requise.</span>
+            <span *ngIf="passwordMismatch">Les mots de passe ne correspondent pas.</span>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn btn-primary w-100"
+          [disabled]="isLoading">
+          <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          {{ isLoading ? 'Inscription en cours...' : "S'inscrire" }}
+        </button>
+      </form>
+
+      <hr>
+      <p class="text-center mb-0">
+        Déjà un compte ?
+        <a routerLink="/login">Se connecter</a>
+      </p>
+    </div>
+  </div>
+</div>

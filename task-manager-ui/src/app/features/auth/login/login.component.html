@@ -1,7 +1,7 @@
 <div class="min-vh-100 d-flex align-items-center justify-content-center bg-light">
   <div class="card shadow login-card">
     <div class="card-body p-4">
-      <h4 class="card-title text-center mb-4">{{ isLoginMode ? 'Connexion' : 'Inscription' }}</h4>
+      <h4 class="card-title text-center mb-4">Connexion</h4>
 
       <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
@@ -24,17 +24,13 @@
             formControlName="password">
           <div class="invalid-feedback">Minimum 8 caractères</div>
         </div>
-        <button type="submit" class="btn btn-primary w-100">
-          {{ isLoginMode ? 'Se connecter' : "S'inscrire" }}
-        </button>
+        <button type="submit" class="btn btn-primary w-100">Se connecter</button>
       </form>
 
       <hr>
       <p class="text-center mb-0">
-        {{ isLoginMode ? 'Pas de compte ?' : 'Déjà inscrit ?' }}
-        <a href="#" (click)="$event.preventDefault(); toggle()">
-          {{ isLoginMode ? "S'inscrire" : 'Se connecter' }}
-        </a>
+        Pas de compte ?
+        <a routerLink="/register">S'inscrire</a>
       </p>
     </div>
   </div>

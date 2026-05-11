@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
-import { AuthRequest, AuthResponse } from '../models/user.model';
+import { AuthRequest, AuthResponse, RegisterRequest } from '../models/user.model';
 import { ApiResponse } from '../models/api-response.model';
 import { environment } from '../../../environments/environment';
 
@@ -22,7 +22,7 @@ export class AuthService {
       );
   }
 
-  register(request: AuthRequest): Observable<AuthResponse> {
+  register(request: RegisterRequest): Observable<AuthResponse> {
     return this.http
       .post<ApiResponse<AuthResponse>>(`${this.API}/register`, request)
       .pipe(
