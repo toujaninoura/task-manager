@@ -5,6 +5,7 @@ import { AbstractControl, ReactiveFormsModule, FormBuilder, FormGroup, Validator
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
+import { PasswordStrengthService } from '../../../core/services/password-strength.service';
 
 function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
   const password = group.get('password')?.value;
@@ -28,7 +29,8 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private passwordStrengthService: PasswordStrengthService
   ) {
     this.form = this.fb.group(
       {
@@ -56,26 +58,15 @@ export class RegisterComponent {
   }
 
   get passwordStrengthScore(): number {
-    const pwd: string = this.field('password')?.value ?? '';
-    if (!pwd) return 0;
-    let score = 0;
-    if (pwd.length >= 8) score++;
-    if (/[A-Z]/.test(pwd)) score++;
-    if (/[a-z]/.test(pwd)) score++;
-    if (/[0-9]/.test(pwd)) score++;
-    if (/[^A-Za-z0-9]/.test(pwd)) score++;
-    return score;
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').score;
   }
 
   get passwordStrengthClass(): string {
-    const s = this.passwordStrengthScore;
-    if (s <= 1) return 'bg-danger';
-    if (s <= 3) return 'bg-warning';
-    return 'bg-success';
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').cssClass;
   }
 
   get passwordStrengthWidth(): string {
-    return `${(this.passwordStrengthScore / 5) * 100}%`;
+    return this.passwordStrengthService.evaluate(this.field('password')?.value ?? '').widthPercent;
   }
 
   onSubmit(): void {

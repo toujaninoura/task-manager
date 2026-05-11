@@ -56,7 +56,7 @@
             <span *ngIf="field('password')?.hasError('minlength')">Minimum 8 caractères.</span>
           </div>
           <div *ngIf="field('password')?.value" class="mt-2">
-            <div class="progress" style="height: 6px;">
+            <div class="progress password-strength-bar">
               <div
                 class="progress-bar"
                 role="progressbar"

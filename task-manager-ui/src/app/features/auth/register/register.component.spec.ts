@@ -7,6 +7,7 @@ import { of, throwError } from 'rxjs';
 import { RegisterComponent } from './register.component';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthResponse } from '../../../core/models/user.model';
+import { PasswordStrengthService } from '../../../core/services/password-strength.service';
 
 describe('RegisterComponent', () => {
   let component: RegisterComponent;
@@ -37,7 +38,8 @@ describe('RegisterComponent', () => {
       providers: [
         provideRouter([]),
         provideLocationMocks(),
-        { provide: AuthService, useValue: authServiceSpy }
+        { provide: AuthService, useValue: authServiceSpy },
+        PasswordStrengthService
       ]
     }).compileComponents();
 
@@ -125,6 +127,14 @@ describe('RegisterComponent', () => {
     expect(authServiceSpy.register).not.toHaveBeenCalled();
   });
 
+  it('should not submit when isLoading is true', () => {
+    authServiceSpy.register.and.returnValue(of(mockAuthResponse));
+    component.form.setValue(validForm);
+    component.isLoading = true;
+    component.onSubmit();
+    expect(authServiceSpy.register).not.toHaveBeenCalled();
+  });
+
   // ================== Password Strength ==================
 
   it('should return score 0 for empty password', () => {
@@ -132,7 +142,7 @@ describe('RegisterComponent', () => {
     expect(component.passwordStrengthScore).toBe(0);
   });
 
-  it('should return score 1 for password with only length', () => {
+  it('should return score 2 for lowercase-only password with length', () => {
     component.form.get('password')?.setValue('abcdefgh');
     expect(component.passwordStrengthScore).toBe(2); // length + lowercase
   });
@@ -160,13 +170,5 @@ describe('RegisterComponent', () => {
   it('should return correct width percentage for score 5', () => {
     component.form.get('password')?.setValue('Abc1defg!');
     expect(component.passwordStrengthWidth).toBe('100%');
-  });
-
-  it('should not submit when isLoading is true', () => {
-    authServiceSpy.register.and.returnValue(of(mockAuthResponse));
-    component.form.setValue(validForm);
-    component.isLoading = true;
-    component.onSubmit();
-    expect(authServiceSpy.register).not.toHaveBeenCalled();
   });
 });
