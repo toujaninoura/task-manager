@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
+import { provideLocationMocks } from '@angular/common/testing';
 import { of, throwError } from 'rxjs';
 import { RegisterComponent } from './register.component';
 import { AuthService } from '../../../core/services/auth.service';
@@ -32,8 +33,10 @@ describe('RegisterComponent', () => {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['register']);
 
     await TestBed.configureTestingModule({
-      imports: [RegisterComponent, ReactiveFormsModule, RouterTestingModule.withRoutes([])],
+      imports: [RegisterComponent, ReactiveFormsModule],
       providers: [
+        provideRouter([]),
+        provideLocationMocks(),
         { provide: AuthService, useValue: authServiceSpy }
       ]
     }).compileComponents();
@@ -92,11 +95,12 @@ describe('RegisterComponent', () => {
     });
   });
 
-  it('should redirect to /login after successful register', () => {
+  it('should redirect to /login and reset isLoading after successful register', () => {
     authServiceSpy.register.and.returnValue(of(mockAuthResponse));
     component.form.setValue(validForm);
     component.onSubmit();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    expect(component.isLoading).toBeFalse();
   });
 
   it('should set errorMessage on API error', () => {

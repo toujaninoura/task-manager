@@ -15,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class LoginComponent {
   private destroyRef = inject(DestroyRef);
+  isLoading = false;
   errorMessage = '';
   form: FormGroup;
 
@@ -30,12 +31,17 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLoading) return;
+    this.isLoading = true;
+    this.errorMessage = '';
     this.authService.login(this.form.value)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => this.router.navigate(['/tasks']),
-        error: (err: HttpErrorResponse) => { this.errorMessage = err.error?.message || 'Une erreur est survenue'; }
+        next: () => { this.isLoading = false; this.router.navigate(['/tasks']); },
+        error: (err: HttpErrorResponse) => {
+          this.isLoading = false;
+          this.errorMessage = err.error?.message || 'Une erreur est survenue';
+        }
       });
   }
 }

@@ -64,7 +64,7 @@ export class RegisterComponent {
     this.authService.register({ firstName, lastName, email, password })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: () => this.router.navigate(['/login']),
+        next: () => { this.isLoading = false; this.router.navigate(['/login']); },
         error: (err: HttpErrorResponse) => {
           this.isLoading = false;
           this.errorMessage = err.error?.message || 'Une erreur est survenue. Veuillez réessayer.';
