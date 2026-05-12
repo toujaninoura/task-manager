@@ -47,6 +47,19 @@ export class AuthService {
     localStorage.setItem(this.TOKEN_KEY, token);
   }
 
+  getUserEmail(): string | null {
+    const token = this.getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      if (payload.exp && payload.exp < now) return null;
+      return payload['email'] ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   getUserId(): number | null {
     const token = this.getToken();
     if (!token) return null;
