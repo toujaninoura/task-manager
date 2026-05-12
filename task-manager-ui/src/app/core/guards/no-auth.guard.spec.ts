@@ -1,44 +1,52 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter, UrlTree } from '@angular/router';
 import { provideLocationMocks } from '@angular/common/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { noAuthGuard } from './no-auth.guard';
-import { AuthService } from '../services/auth.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
+@Component({ template: '', standalone: true })
+class DummyComponent {}
+
+function makeJwt(payload: Record<string, unknown>): string {
+  const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body = btoa(JSON.stringify(payload));
+  return `${header}.${body}.signature`;
+}
+
 describe('noAuthGuard', () => {
-  let authServiceSpy: jasmine.SpyObj<AuthService>;
-  let router: Router;
-
   beforeEach(() => {
-    authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
-
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([{ path: 'login', canActivate: [noAuthGuard], component: {} as any }]),
+        provideRouter([{ path: 'login', canActivate: [noAuthGuard], component: DummyComponent }]),
         provideLocationMocks(),
-        { provide: AuthService, useValue: authServiceSpy }
+        provideHttpClient(),
+        provideHttpClientTesting()
       ]
     });
-
-    router = TestBed.inject(Router);
-    spyOn(router, 'navigate');
+    localStorage.clear();
   });
 
-  it('noAuthGuard_WhenAuthenticated_ShouldReturnFalseAndNavigateToTasks', () => {
-    authServiceSpy.isAuthenticated.and.returnValue(true);
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('noAuthGuard_WhenAuthenticated_ShouldReturnUrlTreeForTasks', () => {
+    const futureExp = Math.floor(Date.now() / 1000) + 3600;
+    localStorage.setItem('auth_token', makeJwt({ exp: futureExp, email: 'test@test.com' }));
     const result = TestBed.runInInjectionContext(() =>
       noAuthGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
     );
-    expect(result).toBeFalse();
-    expect(router.navigate).toHaveBeenCalledWith(['/tasks']);
+    expect(result instanceof UrlTree).toBeTrue();
+    expect((result as UrlTree).toString()).toBe('/tasks');
   });
 
   it('noAuthGuard_WhenNotAuthenticated_ShouldReturnTrue', () => {
-    authServiceSpy.isAuthenticated.and.returnValue(false);
     const result = TestBed.runInInjectionContext(() =>
       noAuthGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
     );
     expect(result).toBeTrue();
-    expect(router.navigate).not.toHaveBeenCalled();
   });
 });
