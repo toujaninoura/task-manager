@@ -40,7 +40,11 @@ export class AuthService {
   }
 
   isLoggedIn(): boolean {
-    return !!this.getToken();
+    return this.isAuthenticated();
+  }
+
+  isAuthenticated(): boolean {
+    return this.decodePayload() !== null;
   }
 
   private setToken(token: string): void {
