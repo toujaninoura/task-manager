@@ -28,14 +28,14 @@ describe('AuthService', () => {
     expect(service.isLoggedIn()).toBeFalse();
   });
 
-  it('should return true after setToken', () => {
-    service.setToken('test-token');
+  it('should return true when token exists in localStorage', () => {
+    localStorage.setItem('auth_token', 'test-token');
     expect(service.isLoggedIn()).toBeTrue();
     expect(service.getToken()).toBe('test-token');
   });
 
   it('should clear token on logout', () => {
-    service.setToken('test-token');
+    localStorage.setItem('auth_token', 'test-token');
     service.logout();
     expect(service.isLoggedIn()).toBeFalse();
     expect(service.getToken()).toBeNull();
@@ -88,7 +88,7 @@ describe('AuthService', () => {
   });
 
   it('should return null from getUserId when token is malformed', () => {
-    service.setToken('not-a-valid-jwt');
+    localStorage.setItem('auth_token', 'not-a-valid-jwt');
     expect(service.getUserId()).toBeNull();
   });
 });

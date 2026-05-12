@@ -43,7 +43,7 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  setToken(token: string): void {
+  private setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
   }
 
