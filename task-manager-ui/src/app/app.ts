@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
 import { filter, map } from 'rxjs/operators';
 
@@ -16,6 +17,7 @@ import { filter, map } from 'rxjs/operators';
 })
 export class App implements OnInit {
   showNavbar = true;
+  private destroyRef = inject(DestroyRef);
 
   constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
 
@@ -26,7 +28,8 @@ export class App implements OnInit {
         let route = this.activatedRoute.firstChild;
         while (route?.firstChild) route = route.firstChild;
         return route?.snapshot.data?.['hideNavbar'] !== true;
-      })
+      }),
+      takeUntilDestroyed(this.destroyRef)
     ).subscribe(show => this.showNavbar = show);
   }
 }
