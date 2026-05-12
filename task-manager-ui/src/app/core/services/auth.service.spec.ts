@@ -91,4 +91,33 @@ describe('AuthService', () => {
     localStorage.setItem('auth_token', 'not-a-valid-jwt');
     expect(service.getUserId()).toBeNull();
   });
+
+  describe('isAuthenticated', () => {
+    function makeJwt(payload: Record<string, unknown>): string {
+      const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+      const body = btoa(JSON.stringify(payload));
+      return `${header}.${body}.signature`;
+    }
+
+    it('isAuthenticated_WhenTokenValid_ShouldReturnTrue', () => {
+      const futureExp = Math.floor(Date.now() / 1000) + 3600;
+      localStorage.setItem('auth_token', makeJwt({ exp: futureExp, email: 'test@test.com' }));
+      expect(service.isAuthenticated()).toBeTrue();
+    });
+
+    it('isAuthenticated_WhenNoToken_ShouldReturnFalse', () => {
+      expect(service.isAuthenticated()).toBeFalse();
+    });
+
+    it('isAuthenticated_WhenTokenExpired_ShouldReturnFalse', () => {
+      const pastExp = Math.floor(Date.now() / 1000) - 3600;
+      localStorage.setItem('auth_token', makeJwt({ exp: pastExp, email: 'test@test.com' }));
+      expect(service.isAuthenticated()).toBeFalse();
+    });
+
+    it('isAuthenticated_WhenTokenMalformed_ShouldReturnFalse', () => {
+      localStorage.setItem('auth_token', 'not-a-valid-jwt');
+      expect(service.isAuthenticated()).toBeFalse();
+    });
+  });
 });

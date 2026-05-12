@@ -43,6 +43,10 @@ export class AuthService {
     return !!this.getToken();
   }
 
+  isAuthenticated(): boolean {
+    return this.decodePayload() !== null;
+  }
+
   private setToken(token: string): void {
     localStorage.setItem(this.TOKEN_KEY, token);
   }

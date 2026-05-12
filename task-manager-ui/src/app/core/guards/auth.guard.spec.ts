@@ -1,35 +1,58 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { provideRouter, Router } from '@angular/router';
+import { provideLocationMocks } from '@angular/common/testing';
 import { authGuard } from './auth.guard';
 import { AuthService } from '../services/auth.service';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 describe('authGuard', () => {
-  let authService: jasmine.SpyObj<AuthService>;
-  let router: jasmine.SpyObj<Router>;
+  let authServiceSpy: jasmine.SpyObj<AuthService>;
+  let router: Router;
 
   beforeEach(() => {
-    authService = jasmine.createSpyObj('AuthService', ['isLoggedIn']);
-    router = jasmine.createSpyObj('Router', ['navigate']);
+    authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated']);
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: AuthService, useValue: authService },
-        { provide: Router, useValue: router }
+        provideRouter([{ path: 'tasks', canActivate: [authGuard], component: {} as any }]),
+        provideLocationMocks(),
+        { provide: AuthService, useValue: authServiceSpy }
       ]
     });
+
+    router = TestBed.inject(Router);
+    spyOn(router, 'navigate');
   });
 
-  it('should allow navigation when logged in', () => {
-    authService.isLoggedIn.and.returnValue(true);
+  it('authGuard_WhenTokenValid_ShouldReturnTrue', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(true);
     const result = TestBed.runInInjectionContext(() =>
       authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
     );
     expect(result).toBeTrue();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  it('should redirect to /login when not logged in', () => {
-    authService.isLoggedIn.and.returnValue(false);
+  it('authGuard_WhenNoToken_ShouldReturnFalseAndNavigateToLogin', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(false);
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
+    );
+    expect(result).toBeFalse();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('authGuard_WhenTokenExpired_ShouldReturnFalseAndNavigateToLogin', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(false);
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
+    );
+    expect(result).toBeFalse();
+    expect(router.navigate).toHaveBeenCalledWith(['/login']);
+  });
+
+  it('authGuard_WhenTokenMalformed_ShouldReturnFalseAndNavigateToLogin', () => {
+    authServiceSpy.isAuthenticated.and.returnValue(false);
     const result = TestBed.runInInjectionContext(() =>
       authGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
     );
