@@ -1,8 +1,12 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { provideLocationMocks } from '@angular/common/testing';
 import { NavbarComponent } from './navbar.component';
 import { AuthService } from '../../../core/services/auth.service';
+
+@Component({ template: '', standalone: true })
+class DummyComponent {}
 
 describe('NavbarComponent', () => {
   let component: NavbarComponent;
@@ -17,7 +21,10 @@ describe('NavbarComponent', () => {
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          { path: 'tasks', component: DummyComponent },
+          { path: 'tasks/list', component: DummyComponent }
+        ]),
         provideLocationMocks(),
         { provide: AuthService, useValue: authServiceSpy }
       ]
@@ -76,5 +83,47 @@ describe('NavbarComponent', () => {
     await setup();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.avatar-initials')).toBeTruthy();
+  });
+
+  it('template_Dashboard_WhenRouteActive_ShouldApplyActiveClass', async () => {
+    await setup();
+    await router.navigate(['/tasks']);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const navLinks = fixture.nativeElement.querySelectorAll('.navbar-nav a[routerlink="/tasks"]') as NodeListOf<HTMLElement>;
+    const dashboardLink = Array.from(navLinks).find(el => el.classList.contains('nav-link'));
+    expect(dashboardLink?.classList).toContain('active');
+  });
+
+  it('template_MyTasks_WhenRouteActive_ShouldApplyActiveClass', async () => {
+    await setup();
+    await router.navigate(['/tasks/list']);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const myTasksLink = fixture.nativeElement.querySelector('.navbar-nav a[routerlink="/tasks/list"]') as HTMLElement;
+    expect(myTasksLink?.classList).toContain('active');
+  });
+
+  it('template_SharedTasks_ShouldBeSpanWithDisabledClass', async () => {
+    await setup();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const sharedSpan = compiled.querySelector('span.nav-link.disabled');
+    expect(sharedSpan).toBeTruthy();
+    expect(sharedSpan?.textContent).toContain('Tâches Partagées');
+  });
+
+  it('template_SharedTasks_ShouldHaveAriaDisabledTrue', async () => {
+    await setup();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const sharedSpan = compiled.querySelector('span.nav-link.disabled');
+    expect(sharedSpan?.getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('template_SharedTasks_ShouldContainSoonBadge', async () => {
+    await setup();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const badge = compiled.querySelector('span.nav-link.disabled .badge');
+    expect(badge).toBeTruthy();
+    expect(badge?.textContent?.trim()).toBe('Bientôt');
   });
 });
