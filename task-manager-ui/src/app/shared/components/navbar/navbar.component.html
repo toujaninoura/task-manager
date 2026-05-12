@@ -23,13 +23,14 @@
       <!-- Avatar + dropdown -->
       <ul class="navbar-nav">
         <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button"
-            data-bs-toggle="dropdown" aria-expanded="false">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2"
+            role="button" data-bs-toggle="dropdown" aria-expanded="false"
+            (click)="$event.preventDefault()">
             <span class="avatar-initials">{{ userInitials }}</span>
             <span>{{ userEmail }}</span>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item disabled" href="#">Mon profil</a></li>
+            <li><span class="dropdown-item disabled" aria-disabled="true">Mon profil</span></li>
             <li>
               <hr class="dropdown-divider">
             </li>

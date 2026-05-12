@@ -48,27 +48,25 @@ export class AuthService {
   }
 
   getUserEmail(): string | null {
-    const token = this.getToken();
-    if (!token) return null;
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) return null;
-      return payload['email'] ?? null;
-    } catch {
-      return null;
-    }
+    const p = this.decodePayload();
+    return p ? (p['email'] as string ?? null) : null;
   }
 
   getUserId(): number | null {
+    const p = this.decodePayload();
+    if (!p) return null;
+    const id = p['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
+    return id ? parseInt(id as string, 10) : null;
+  }
+
+  private decodePayload(): Record<string, unknown> | null {
     const token = this.getToken();
     if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const payload = JSON.parse(atob(token.split('.')[1])) as Record<string, unknown>;
       const now = Math.floor(Date.now() / 1000);
-      if (payload.exp && payload.exp < now) return null;
-      const id = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-      return id ? parseInt(id, 10) : null;
+      if (typeof payload['exp'] === 'number' && payload['exp'] < now) return null;
+      return payload;
     } catch {
       return null;
     }

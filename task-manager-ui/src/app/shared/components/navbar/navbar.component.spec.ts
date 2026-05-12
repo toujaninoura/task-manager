@@ -29,45 +29,49 @@ describe('NavbarComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create the navbar component', () => {
+  it('create_Always_ShouldInstantiateComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should return userEmail from AuthService', () => {
+  it('userEmail_WhenEmailExists_ShouldReturnEmail', () => {
     authServiceSpy.getUserEmail.and.returnValue('toujani@example.com');
+    fixture.detectChanges();
     expect(component.userEmail).toBe('toujani@example.com');
   });
 
-  it('should return empty string when userEmail is null', () => {
+  it('userEmail_WhenEmailIsNull_ShouldReturnEmptyString', () => {
     authServiceSpy.getUserEmail.and.returnValue(null);
+    fixture.detectChanges();
     expect(component.userEmail).toBe('');
   });
 
-  it('should return userInitials as first 2 letters uppercase', () => {
+  it('userInitials_WhenEmailExists_ShouldReturnFirst2LettersUppercase', () => {
     authServiceSpy.getUserEmail.and.returnValue('toujani@example.com');
+    fixture.detectChanges();
     expect(component.userInitials).toBe('TO');
   });
 
-  it('should return empty string for userInitials when email is null', () => {
+  it('userInitials_WhenEmailIsNull_ShouldReturnEmptyString', () => {
     authServiceSpy.getUserEmail.and.returnValue(null);
+    fixture.detectChanges();
     expect(component.userInitials).toBe('');
   });
 
-  it('should call authService.logout and navigate to /login on logout()', () => {
+  it('logout_WhenCalled_ShouldCallAuthServiceLogoutAndNavigateToLogin', () => {
     spyOn(router, 'navigate');
     component.logout();
     expect(authServiceSpy.logout).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('should render the navbar brand link', () => {
+  it('template_Always_ShouldRenderNavbarBrandWithAppName', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const brand = compiled.querySelector('.navbar-brand');
     expect(brand).toBeTruthy();
     expect(brand?.textContent).toContain('TaskManager');
   });
 
-  it('should render the dropdown avatar initials in the template', () => {
+  it('template_Always_ShouldRenderAvatarInitialsElement', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const avatar = compiled.querySelector('.avatar-initials');
     expect(avatar).toBeTruthy();

@@ -5,8 +5,8 @@ import { RegisterComponent } from './features/auth/register/register.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/tasks', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  { path: 'register', component: RegisterComponent },
+  { path: 'login', component: LoginComponent, data: { hideNavbar: true } },
+  { path: 'register', component: RegisterComponent, data: { hideNavbar: true } },
   {
     path: 'tasks',
     canActivate: [authGuard],

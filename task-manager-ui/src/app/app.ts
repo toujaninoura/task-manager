@@ -1,21 +1,32 @@
-import { Component } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
-import { NgIf } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { NavbarComponent } from './shared/components/navbar/navbar.component';
+import { filter, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NgIf, NavbarComponent],
+  imports: [RouterOutlet, NavbarComponent],
   template: `
-    <app-navbar *ngIf="showNavbar" />
+    @if (showNavbar) {
+      <app-navbar />
+    }
     <router-outlet />
   `
 })
-export class App {
-  constructor(private router: Router) {}
+export class App implements OnInit {
+  showNavbar = true;
 
-  get showNavbar(): boolean {
-    return !['login', 'register'].some(path => this.router.url.includes('/' + path));
+  constructor(private router: Router, private activatedRoute: ActivatedRoute) {}
+
+  ngOnInit(): void {
+    this.router.events.pipe(
+      filter(e => e instanceof NavigationEnd),
+      map(() => {
+        let route = this.activatedRoute.firstChild;
+        while (route?.firstChild) route = route.firstChild;
+        return route?.snapshot.data?.['hideNavbar'] !== true;
+      })
+    ).subscribe(show => this.showNavbar = show);
   }
 }
