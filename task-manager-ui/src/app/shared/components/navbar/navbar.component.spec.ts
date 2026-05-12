@@ -10,9 +10,9 @@ describe('NavbarComponent', () => {
   let authServiceSpy: jasmine.SpyObj<AuthService>;
   let router: Router;
 
-  beforeEach(async () => {
+  async function setup(emailReturn: string | null = 'test@example.com'): Promise<void> {
     authServiceSpy = jasmine.createSpyObj('AuthService', ['getUserEmail', 'logout']);
-    authServiceSpy.getUserEmail.and.returnValue('test@example.com');
+    authServiceSpy.getUserEmail.and.returnValue(emailReturn);
 
     await TestBed.configureTestingModule({
       imports: [NavbarComponent],
@@ -27,53 +27,54 @@ describe('NavbarComponent', () => {
     component = fixture.componentInstance;
     router = TestBed.inject(Router);
     fixture.detectChanges();
-  });
+  }
 
-  it('create_Always_ShouldInstantiateComponent', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('create_Always_ShouldInstantiateComponent', async () => {
+    await setup();
     expect(component).toBeTruthy();
   });
 
-  it('userEmail_WhenEmailExists_ShouldReturnEmail', () => {
-    authServiceSpy.getUserEmail.and.returnValue('toujani@example.com');
-    fixture.detectChanges();
+  it('userEmail_WhenEmailExists_ShouldReturnEmail', async () => {
+    await setup('toujani@example.com');
     expect(component.userEmail).toBe('toujani@example.com');
   });
 
-  it('userEmail_WhenEmailIsNull_ShouldReturnEmptyString', () => {
-    authServiceSpy.getUserEmail.and.returnValue(null);
-    fixture.detectChanges();
+  it('userEmail_WhenEmailIsNull_ShouldReturnEmptyString', async () => {
+    await setup(null);
     expect(component.userEmail).toBe('');
   });
 
-  it('userInitials_WhenEmailExists_ShouldReturnFirst2LettersUppercase', () => {
-    authServiceSpy.getUserEmail.and.returnValue('toujani@example.com');
-    fixture.detectChanges();
+  it('userInitials_WhenEmailExists_ShouldReturnFirst2LettersUppercase', async () => {
+    await setup('toujani@example.com');
     expect(component.userInitials).toBe('TO');
   });
 
-  it('userInitials_WhenEmailIsNull_ShouldReturnEmptyString', () => {
-    authServiceSpy.getUserEmail.and.returnValue(null);
-    fixture.detectChanges();
+  it('userInitials_WhenEmailIsNull_ShouldReturnEmptyString', async () => {
+    await setup(null);
     expect(component.userInitials).toBe('');
   });
 
-  it('logout_WhenCalled_ShouldCallAuthServiceLogoutAndNavigateToLogin', () => {
+  it('logout_WhenCalled_ShouldCallAuthServiceLogoutAndNavigateToLogin', async () => {
+    await setup();
     spyOn(router, 'navigate');
     component.logout();
     expect(authServiceSpy.logout).toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/login']);
   });
 
-  it('template_Always_ShouldRenderNavbarBrandWithAppName', () => {
+  it('template_Always_ShouldRenderNavbarBrandWithAppName', async () => {
+    await setup();
     const compiled = fixture.nativeElement as HTMLElement;
     const brand = compiled.querySelector('.navbar-brand');
     expect(brand).toBeTruthy();
     expect(brand?.textContent).toContain('TaskManager');
   });
 
-  it('template_Always_ShouldRenderAvatarInitialsElement', () => {
+  it('template_Always_ShouldRenderAvatarInitialsElement', async () => {
+    await setup();
     const compiled = fixture.nativeElement as HTMLElement;
-    const avatar = compiled.querySelector('.avatar-initials');
-    expect(avatar).toBeTruthy();
+    expect(compiled.querySelector('.avatar-initials')).toBeTruthy();
   });
 });

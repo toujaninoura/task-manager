@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -11,19 +11,16 @@ import { AuthService } from '../../../core/services/auth.service';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavbarComponent {
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  get userEmail(): string {
-    return this.authService.getUserEmail() ?? '';
-  }
+  readonly userEmail: string;
+  readonly userInitials: string;
 
-  get userInitials(): string {
-    const email = this.authService.getUserEmail();
-    if (!email) return '';
-    return email.substring(0, 2).toUpperCase();
+  constructor() {
+    const email = this.authService.getUserEmail() ?? '';
+    this.userEmail = email;
+    this.userInitials = email.substring(0, 2).toUpperCase();
   }
 
   logout(): void {
